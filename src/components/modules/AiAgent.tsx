@@ -4,7 +4,7 @@ import { useApp } from '@/lib/store'
 import { MessageSquare, X, Send, Sparkles } from 'lucide-react'
 
 export function AiAgent() {
-    const { state } = useApp()
+    const { state, dispatch } = useApp()
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
         { role: 'ai', text: 'Eu sou o Agente Cyclops. Analise seus dados financeiros comigo.' }
@@ -20,19 +20,67 @@ export function AiAgent() {
         scrollToBottom()
     }, [messages])
 
+    const [isTyping, setIsTyping] = useState(false)
+
     const handleSend = () => {
         if (!input.trim()) return
 
-        const newMsgs = [...messages, { role: 'user', text: input }] as any
+        const userMsg = { role: 'user', text: input }
+        const newMsgs = [...messages, userMsg] as any
         setMessages(newMsgs)
         setInput('')
+        setIsTyping(true)
 
         // Simple Rule-Based AI Response
         setTimeout(() => {
-            let response = "Ainda estou aprendendo a analisar esses dados complexos."
+            let response: any = "Ainda estou aprendendo a analisar esses dados complexos."
             const lower = input.toLowerCase()
 
-            if (lower.includes('gasto') || lower.includes('despesa')) {
+            // 🏦 Bank Notification Detection Logic
+            const moneyRegex = /(?:r\$|rs)\s?(\d+(?:[.,]\d{2})?)/i
+            const amountMatch = input.match(moneyRegex)
+            const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '.')) : 0
+
+            if (amount > 0 && (lower.includes('aprovada') || lower.includes('compra') || lower.includes('pagamento') || lower.includes('pix enviado') || lower.includes('transferência enviada') || lower.includes('débito'))) {
+                // Detected Expense
+                const description = lower.includes('em') ? input.split(/em/i)[1]?.trim() : 'Nova Despesa'
+                response = {
+                    text: `Detectei uma notificação de saída bancária! Deseja registrar este gasto de R$ ${amount.toFixed(2)}?`,
+                    action: {
+                        label: 'Registrar Despesa',
+                        type: 'ADD_TRANSACTION',
+                        payload: {
+                            id: crypto.randomUUID(),
+                            description: description.slice(0, 30),
+                            amount: amount,
+                            date: new Date().toISOString().slice(0, 10),
+                            type: 'expense',
+                            category: 'Outros',
+                            status: 'paid'
+                        }
+                    }
+                }
+            }
+            else if (amount > 0 && (lower.includes('recebido') || lower.includes('transferência recebida') || lower.includes('depósito') || lower.includes('pix recebido'))) {
+                // Detected Income
+                response = {
+                    text: `Notificação de entrada detectada! Recebeu R$ ${amount.toFixed(2)}. Quer lançar agora?`,
+                    action: {
+                        label: 'Registrar Entrada',
+                        type: 'ADD_TRANSACTION',
+                        payload: {
+                            id: crypto.randomUUID(),
+                            description: 'Entrada via Notificação',
+                            amount: amount,
+                            date: new Date().toISOString().slice(0, 10),
+                            type: 'income',
+                            category: 'Outros',
+                            status: 'paid'
+                        }
+                    }
+                }
+            }
+            else if (lower.includes('gasto') || lower.includes('despesa')) {
                 const total = state.transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0)
                 response = `Identifiquei que o total de despesas registradas é R$ ${total.toFixed(2)}.`
             }
@@ -55,8 +103,15 @@ export function AiAgent() {
                 response = "Minha análise tática: \n1. Priorize pagar as faturas do Nézio para evitar juros do rotativo.\n2. Controle o consumo na Lanchonete, pois isso reduz seu recebimento do Rone.\n3. Tente destinar 10% da renda para a aba Investimentos."
             }
 
-            setMessages([...newMsgs, { role: 'ai', text: response }])
+            const finalMsg = typeof response === 'string' ? { role: 'ai', text: response } : { role: 'ai', text: response.text, action: response.action }
+            setMessages([...newMsgs, finalMsg as any])
+            setIsTyping(false)
         }, 800)
+    }
+
+    const handleAction = (action: any) => {
+        dispatch({ type: action.type, payload: action.payload })
+        setMessages([...messages, { role: 'ai', text: `✅ ${action.type === 'ADD_TRANSACTION' ? 'Transação registrada com sucesso!' : 'Ação realizada.'}` }])
     }
 
     if (!isOpen) {
@@ -89,32 +144,50 @@ export function AiAgent() {
 
             {/* Chat */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-                {messages.map((m, i) => (
+                {messages.map((m: any, i) => (
                     <div key={i} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
                         <div className={`p-3 rounded-2xl max-w-[85%] text-sm shadow-sm ${m.role === 'ai' ? 'bg-slate-800 text-slate-200 rounded-tl-none border border-white/5' : 'bg-red-600 text-white rounded-tr-none shadow-[0_4px_10px_rgba(220,38,38,0.2)]'}`}>
                             {m.text}
+                            {m.action && (
+                                <div className="mt-3">
+                                    <button
+                                        onClick={() => handleAction(m.action)}
+                                        className="bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs hover:bg-red-500 transition-colors w-full"
+                                    >
+                                        {m.action.label}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
+                {isTyping && (
+                    <div className="flex justify-start">
+                        <div className="bg-slate-800 px-4 py-2 rounded-full animate-pulse text-[10px] text-zinc-400">Cyclops analisando...</div>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
-            <div className="p-3 border-t border-white/10 flex gap-2 bg-[#050A14]">
-                <input
-                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 text-white text-sm focus:outline-none focus:border-red-500/50 transition-colors"
-                    placeholder="Digite sua dúvida..."
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSend()}
-                />
-                <button
-                    onClick={handleSend}
-                    className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-500 transition-colors shadow-lg"
-                    disabled={!input.trim()}
-                >
-                    <Send size={18} />
-                </button>
+            <div className="p-3 border-t border-white/10 flex flex-col gap-2 bg-[#050A14]">
+                <p className="text-[9px] text-zinc-500 px-2 italic">Dica: Cole o texto de uma notificação bancária aqui.</p>
+                <div className="flex gap-2">
+                    <input
+                        className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 text-white text-sm focus:outline-none focus:border-red-500/50 transition-colors"
+                        placeholder="Ex: Compra de R$ 32,50 no Posto..."
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleSend()}
+                    />
+                    <button
+                        onClick={handleSend}
+                        className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white hover:bg-red-500 transition-colors shadow-lg"
+                        disabled={!input.trim()}
+                    >
+                        <Send size={18} />
+                    </button>
+                </div>
             </div>
         </div>
     )
