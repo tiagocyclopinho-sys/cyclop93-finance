@@ -1,13 +1,14 @@
 "use client"
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '@/lib/store'
-import { MessageSquare, X, Send, Sparkles } from 'lucide-react'
+import { MessageSquare, X, Send, Sparkles, Mic, MicOff } from 'lucide-react'
 
 export function AiAgent() {
     const { state, dispatch } = useApp()
     const [isOpen, setIsOpen] = useState(false)
+    const [isListening, setIsListening] = useState(false)
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
-        { role: 'ai', text: 'Eu sou o Agente Cyclops. Analise seus dados financeiros comigo.' }
+        { role: 'ai', text: 'Eu sou o Agente Cyclops. Analise seus dados financeiros comigo ou use o comando de voz!' }
     ])
     const [input, setInput] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -21,6 +22,71 @@ export function AiAgent() {
     }, [messages])
 
     const [isTyping, setIsTyping] = useState(false)
+
+    // Listen for custom trigger from Dashboard
+    useEffect(() => {
+        const handleTrigger = (event: any) => {
+            const { message } = event.detail;
+            setIsOpen(true);
+            const userMsg = { role: 'user', text: message };
+            const newMsgs = [...messages, userMsg] as any;
+            setMessages(newMsgs);
+            setIsTyping(true);
+
+            setTimeout(() => {
+                const btcPrice = "R$ 408.302,13"; // Based on recent search
+                const responseText = `Para seu saldo disponível, aqui estão 3 opções de investimento tático:
+
+1. 🏦 **CDB (Pós-fixado)**: Ideal para reserva de emergência, com liquidez diária e retorno de 100% do CDI.
+2. 🏢 **FIIs (Fundos Imobiliários)**: Boa opção para gerar renda passiva mensal (dividendos) isenta de IR.
+3. 📈 **Ações (Value Investing)**: Foco em empresas sólidas que pagam bons dividendos para longo prazo.
+
+💰 **Bônus: Cotação BTC hoje:** ~${btcPrice}.
+
+Qual dessas opções você gostaria de detalhar ou registrar em sua aba de Investimentos?`;
+
+                setMessages([...newMsgs, { role: 'ai', text: responseText }]);
+                setIsTyping(false);
+            }, 1000);
+        };
+
+        window.addEventListener('openAiAgent', handleTrigger);
+        return () => window.removeEventListener('openAiAgent', handleTrigger);
+    }, [messages]);
+
+    // Voice Recognition Setup
+    const handleVoiceRecognition = () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Seu navegador não suporta reconhecimento de voz. Tente no Chrome.');
+            return;
+        }
+
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+        };
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setInput(transcript);
+            setIsListening(false);
+        };
+
+        recognition.onerror = () => {
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.start();
+    };
 
     const handleSend = () => {
         if (!input.trim()) return
@@ -116,13 +182,28 @@ export function AiAgent() {
 
     if (!isOpen) {
         return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,0,0,0.5)] hover:scale-110 transition-transform z-50 group"
-            >
-                <div className="w-8 h-1 bg-yellow-400 absolute top-5 animate-pulse group-hover:bg-white transition-colors" />
-                <MessageSquare className="text-white mt-4" size={20} />
-            </button>
+            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+                {/* Microphone Button */}
+                <button
+                    onClick={handleVoiceRecognition}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-110 z-50 ${isListening
+                            ? 'bg-red-600 animate-pulse'
+                            : 'bg-zinc-900 border border-zinc-800 hover:bg-zinc-800'
+                        }`}
+                    title="Comando de Voz"
+                >
+                    {isListening ? <MicOff className="text-white" size={20} /> : <Mic className="text-zinc-400" size={20} />}
+                </button>
+
+                {/* AI Agent Button */}
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,0,0,0.5)] hover:scale-110 transition-transform group"
+                >
+                    <div className="w-8 h-1 bg-yellow-400 absolute top-5 animate-pulse group-hover:bg-white transition-colors" />
+                    <MessageSquare className="text-white mt-4" size={20} />
+                </button>
+            </div>
         )
     }
 
@@ -173,6 +254,16 @@ export function AiAgent() {
             <div className="p-3 border-t border-white/10 flex flex-col gap-2 bg-[#050A14]">
                 <p className="text-[9px] text-zinc-500 px-2 italic">Dica: Cole o texto de uma notificação bancária aqui.</p>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleVoiceRecognition}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-lg ${isListening
+                                ? 'bg-red-600 animate-pulse'
+                                : 'bg-zinc-800 hover:bg-zinc-700'
+                            }`}
+                        title="Reconhecimento de Voz"
+                    >
+                        {isListening ? <MicOff className="text-white" size={18} /> : <Mic className="text-zinc-400" size={18} />}
+                    </button>
                     <input
                         className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 text-white text-sm focus:outline-none focus:border-red-500/50 transition-colors"
                         placeholder="Ex: Compra de R$ 32,50 no Posto..."

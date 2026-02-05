@@ -40,7 +40,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 )}
             >
                 <div className="h-16 flex items-center px-6 border-b">
-                    <div className="flex items-center gap-3">
+                    <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         {/* Cyclops Visor Image Logo */}
                         <div className="w-10 h-6 relative shrink-0">
                             <img src="/icon.png" alt="Cyclop Logo" className="w-full h-full object-contain" />
@@ -48,7 +48,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                         {!isSidebarCollapsed && (
                             <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
                         )}
-                    </div>
+                    </Link>
                 </div>
 
                 <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 scrollbar-hide">
@@ -108,12 +108,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <header className="h-16 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4 md:px-6 z-10 shrink-0 sticky top-0">
                     <div className="flex items-center gap-4">
                         {/* Logo for both Mobile and Desktop (when sidebar is collapsed or on mobile) */}
-                        <div className="flex items-center gap-3">
+                        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                             <div className="w-10 h-6 relative shrink-0">
                                 <img src="/icon.png" alt="Cyclop Logo" className="w-full h-full object-contain" />
                             </div>
                             <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
-                        </div>
+                        </Link>
 
                         <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground ml-4">
                             <span>Dashboard</span>
@@ -185,13 +185,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
                         {children}
                     </div>
                 </main>
-            </div>
-
-            <div className="fixed bottom-6 left-6 z-50 flex items-center gap-4">
-                <button className="bg-zinc-900 border border-zinc-800 text-muted-foreground hover:text-white relative p-4 rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 group">
-                    <Bell size={24} />
-                    <span className="absolute top-[14px] right-[14px] w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-zinc-900 animate-pulse"></span>
-                </button>
             </div>
 
             <AiAgent />

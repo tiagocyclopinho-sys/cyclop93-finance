@@ -1,8 +1,8 @@
 "use client"
 import { useApp } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar } from 'lucide-react'
-import { useMemo } from 'react'
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart } from 'lucide-react'
+import { useMemo, useEffect } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -44,57 +44,75 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-400">Saldo Disponível</CardTitle>
-            <DollarSign className="h-4 w-4 text-zinc-400" />
-          </CardHeader>
-          <CardContent>
-            <div className={clsx("text-2xl font-bold", balance >= 0 ? "text-white" : "text-red-500")}>R$ {balance.toFixed(2)}</div>
-            <p className="text-xs text-zinc-500 mt-1">
-              +20.1% em relação ao mês anterior
-            </p>
-          </CardContent>
-        </Card>
+        <div
+          onClick={() => {
+            const agentBtn = document.querySelector('button.fixed.bottom-6.right-6') as HTMLButtonElement;
+            if (agentBtn) agentBtn.click();
+            // We'll handle the message in AiAgent component by observing a custom event or similar
+            window.dispatchEvent(new CustomEvent('openAiAgent', {
+              detail: { message: "Gostaria de sugestões de investimento para meu saldo disponível. (CDB, FIIs, Ações e BTC)" }
+            }));
+          }}
+          className="cursor-pointer transition-transform hover:scale-[1.02]"
+        >
+          <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">Saldo Disponível</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className={clsx("text-2xl font-bold", balance >= 0 ? "text-white" : "text-red-500")}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                <Activity size={10} className="text-primary" /> Sugestões de investimento disponíveis
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-400">Entradas (Mês)</CardTitle>
-            <ArrowUpRight className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">R$ {totals.income.toFixed(2)}</div>
-            <p className="text-xs text-zinc-500 mt-1">
-              +12 transações
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/entrada" className="transition-transform hover:scale-[1.02]">
+          <Card className="hover:bg-green-500/5 transition-colors border-green-500/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">Entradas (Mês)</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-500">R$ {totals.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <p className="text-xs text-zinc-500 mt-1">
+                Total recebido no período
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-400">Saídas (Mês)</CardTitle>
-            <ArrowDownRight className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">R$ {totals.expense.toFixed(2)}</div>
-            <p className="text-xs text-zinc-500 mt-1">
-              -4% em relação ao planejado
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/saidas" className="transition-transform hover:scale-[1.02]">
+          <Card className="hover:bg-red-500/5 transition-colors border-red-500/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">Saídas (Mês)</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-500">R$ {totals.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <p className="text-xs text-zinc-500 mt-1">
+                Total gasto no período
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-zinc-400">Investimentos</CardTitle>
-            <Activity className="h-4 w-4 text-zinc-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">R$ {state.investments.reduce((a, b) => a + b.amount, 0).toFixed(2)}</div>
-            <p className="text-xs text-zinc-500 mt-1">
-              Patrimônio acumulado
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/investimentos" className="transition-transform hover:scale-[1.02]">
+          <Card className="hover:bg-blue-500/5 transition-colors border-blue-500/10">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">Investimentos</CardTitle>
+              <PieChart className="h-4 w-4 text-blue-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">R$ {state.investments.reduce((a, b) => a + b.amount, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <p className="text-xs text-zinc-500 mt-1">
+                Patrimônio acumulado
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Main Content Area: Charts & Lists */}
@@ -154,21 +172,44 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {state.transactions
-                  .filter(t => t.status === 'pending')
+                {[
+                  ...state.transactions.filter(t => t.status === 'pending'),
+                  ...state.nezioInstallments.flatMap(p => {
+                    const schedules = [];
+                    const start = new Date(p.date);
+                    const now = new Date();
+
+                    // Generate installments for the next few months if they have not passed
+                    for (let i = 0; i < p.totalInstallments; i++) {
+                      const dueDate = new Date(start.getFullYear(), start.getMonth() + i, 20);
+                      if (dueDate >= now) {
+                        schedules.push({
+                          id: `${p.id}-${i}`,
+                          description: `${p.establishment} (${i + 1}/${p.totalInstallments})`,
+                          date: dueDate.toISOString().slice(0, 10),
+                          amount: p.amount,
+                          status: 'pending' as const,
+                          type: 'expense' as const
+                        });
+                      }
+                      if (schedules.length >= 5) break;
+                    }
+                    return schedules;
+                  })
+                ]
                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                   .slice(0, 5)
                   .map(t => (
                     <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
                       <div className="flex flex-col">
-                        <span className="font-medium text-sm text-zinc-200">{t.description}</span>
+                        <span className="font-medium text-sm text-zinc-200 truncate max-w-[150px]">{t.description}</span>
                         <span className="text-xs text-yellow-500 font-mono">{new Date(t.date).toLocaleDateString()}</span>
                       </div>
                       <span className="font-bold text-sm text-white">R$ {t.amount.toFixed(2)}</span>
                     </div>
                   ))
                 }
-                {state.transactions.filter(t => t.status === 'pending').length === 0 && (
+                {(state.transactions.filter(t => t.status === 'pending').length === 0 && state.nezioInstallments.length === 0) && (
                   <div className="text-center py-8 text-zinc-500 text-sm">Nenhum agendamento futuro.</div>
                 )}
               </div>
@@ -177,7 +218,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions / Status */}
-        <Card className="col-span-3 lg:col-span-3">
+        <Card className="col-span-3 lg:col-span-3 lg:h-fit">
           <CardHeader>
             <CardTitle>Status Financeiro</CardTitle>
             <CardDescription>Visão rápida dos seus compromissos</CardDescription>
@@ -188,10 +229,19 @@ export default function Dashboard() {
                 <CreditCard className="text-yellow-500 h-5 w-5" />
                 <div>
                   <p className="text-sm font-medium text-white">Cartão Nézio</p>
-                  <p className="text-xs text-zinc-500">Próximo Vencimento: 10/Fev</p>
+                  <p className="text-xs text-zinc-500">Vencimento: Dia 20</p>
                 </div>
               </div>
-              <span className="text-white font-bold">R$ 450,00</span>
+              <div className="text-right">
+                <span className="text-white font-bold block">R$ {state.nezioInstallments.reduce((acc, p) => {
+                  const start = new Date(p.date)
+                  const now = new Date()
+                  const monthDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+                  if (monthDiff >= 0 && monthDiff < p.totalInstallments) return acc + p.amount
+                  return acc
+                }, 0).toFixed(2)}</span>
+                <Link href="/nezio" className="text-[10px] text-yellow-500 hover:underline">Ver faturas</Link>
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">

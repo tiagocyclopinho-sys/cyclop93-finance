@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useReducer } from 'react'
 import { Transaction, RoneConsumption, RoneWaterBill, NezioInstallment, Debt, Investment } from './types'
 
 interface AppState {
+    version: string
     transactions: Transaction[]
     roneConsumptions: RoneConsumption[]
     roneWaterBills: RoneWaterBill[]
@@ -25,11 +26,27 @@ type Action =
     | { type: 'SET_INITIAL_BALANCE'; payload: number }
     | { type: 'LOAD_DATA'; payload: AppState }
 
+const CURRENT_VERSION = '2.1' // Updated: Pure initial balance, no adjustment transaction
+
 const initialState: AppState = {
+    version: CURRENT_VERSION,
     transactions: [],
     roneConsumptions: [],
     roneWaterBills: [],
-    nezioInstallments: [],
+    nezioInstallments: [
+        {
+            id: 'netshoes-sample',
+            date: '2026-01-15',
+            description: 'Tênis de Corrida',
+            establishment: 'Netshoes',
+            amount: 145.43,
+            totalAmount: 436.29,
+            installmentIndex: 1,
+            totalInstallments: 3,
+            status: 'pending',
+            lastInstallmentDate: '2026-04-20'
+        }
+    ],
     debts: [],
     investments: [],
     initialBalance: 1454.31
@@ -58,7 +75,16 @@ function reducer(state: AppState, action: Action): AppState {
         case 'SET_INITIAL_BALANCE':
             return { ...state, initialBalance: action.payload }
         case 'LOAD_DATA':
-            return { ...initialState, ...action.payload }
+            // If version mismatch, force update to initial state for new requested data
+            if (!action.payload.version || action.payload.version !== CURRENT_VERSION) {
+                return initialState
+            }
+
+            return {
+                ...state,
+                ...action.payload,
+                version: CURRENT_VERSION
+            }
         default:
             return state
     }
@@ -78,18 +104,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (loaded) {
             try {
                 const parsed = JSON.parse(loaded)
-                if (parsed) dispatch({ type: 'LOAD_DATA', payload: parsed })
+                if (parsed) {
+                    dispatch({ type: 'LOAD_DATA', payload: parsed })
+                }
             } catch (e) {
                 console.error("Failed to load data", e)
             }
         }
     }, [])
 
-    // Save to LocalStorage
+    // Ensure the data is saved immediately if we forced a merge
     useEffect(() => {
-        if (state !== initialState) {
-            localStorage.setItem('cyclop-data', JSON.stringify(state))
-        }
+        localStorage.setItem('cyclop-data', JSON.stringify(state))
     }, [state])
 
     return (
