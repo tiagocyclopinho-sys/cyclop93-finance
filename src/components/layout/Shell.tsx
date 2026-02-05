@@ -25,16 +25,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-    // Theme Toggle (Manual implementation since we don't have next-themes installed yet, but we have Tailwind dark mode)
-    const [isDark, setIsDark] = useState(true)
-
+    // Forced Dark Mode
     useEffect(() => {
-        if (isDark) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-    }, [isDark])
+        document.documentElement.classList.add('dark')
+    }, [])
 
     return (
         <div className="flex h-screen w-full bg-background overflow-hidden font-sans">
@@ -113,41 +107,45 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <header className="h-16 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4 md:px-6 z-10 shrink-0 sticky top-0">
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-                            className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            {isSidebarCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
-                        </button>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="md:hidden text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <Menu size={24} />
-                        </button>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="hidden md:inline">Dashboard</span>
-                            <ChevronRight size={14} className="hidden md:inline" />
+                        {/* Logo for both Mobile and Desktop (when sidebar is collapsed or on mobile) */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-5 bg-zinc-900 rounded-sm border border-zinc-700 relative flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                                <div className="w-full h-1 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] animate-pulse"></div>
+                            </div>
+                            <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
+                        </div>
+
+                        <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground ml-4">
+                            <span>Dashboard</span>
+                            <ChevronRight size={14} />
                             <span className="font-medium text-foreground">
                                 {navItems.find(i => i.href === pathname)?.label || 'Visão Geral'}
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="relative hidden md:block w-64">
+                    <div className="flex items-center gap-2">
+                        <div className="relative hidden md:block w-48 mr-2">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input
                                 className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                                 placeholder="Buscar..."
                             />
                         </div>
-                        <button onClick={() => setIsDark(!isDark)} className="p-2 hover:bg-accent rounded-full text-muted-foreground transition-colors">
-                            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+
+                        {/* Menu on the RIGHT for mobile */}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="md:hidden text-muted-foreground hover:text-foreground transition-colors p-2"
+                        >
+                            <Menu size={24} />
                         </button>
-                        <button className="text-muted-foreground hover:text-foreground relative p-2">
-                            <Bell size={20} />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
+
+                        <button
+                            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+                            className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors p-2"
+                        >
+                            {isSidebarCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
                         </button>
                     </div>
                 </header>
@@ -187,6 +185,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                         {children}
                     </div>
                 </main>
+            </div>
+
+            <div className="fixed bottom-6 left-6 z-50 flex items-center gap-4">
+                <button className="bg-zinc-900 border border-zinc-800 text-muted-foreground hover:text-white relative p-4 rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 group">
+                    <Bell size={24} />
+                    <span className="absolute top-[14px] right-[14px] w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-zinc-900 animate-pulse"></span>
+                </button>
             </div>
 
             <AiAgent />

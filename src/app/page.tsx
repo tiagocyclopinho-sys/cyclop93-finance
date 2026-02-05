@@ -18,7 +18,7 @@ export default function Dashboard() {
     }, { income: 0, expense: 0 })
   }, [state.transactions])
 
-  const balance = totals.income - totals.expense
+  const balance = state.initialBalance + totals.income - totals.expense
 
   return (
     <div className="space-y-6">

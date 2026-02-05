@@ -9,6 +9,7 @@ interface AppState {
     nezioInstallments: NezioInstallment[]
     debts: Debt[]
     investments: Investment[]
+    initialBalance: number
 }
 
 type Action =
@@ -21,6 +22,7 @@ type Action =
     | { type: 'ADD_DEBT'; payload: Debt }
     | { type: 'UPDATE_DEBT'; payload: Debt }
     | { type: 'ADD_INVESTMENT'; payload: Investment }
+    | { type: 'SET_INITIAL_BALANCE'; payload: number }
     | { type: 'LOAD_DATA'; payload: AppState }
 
 const initialState: AppState = {
@@ -29,7 +31,8 @@ const initialState: AppState = {
     roneWaterBills: [],
     nezioInstallments: [],
     debts: [],
-    investments: []
+    investments: [],
+    initialBalance: 1454.31
 }
 
 function reducer(state: AppState, action: Action): AppState {
@@ -43,7 +46,6 @@ function reducer(state: AppState, action: Action): AppState {
         case 'DELETE_RONE_CONSUMPTION':
             return { ...state, roneConsumptions: state.roneConsumptions.filter(c => c.id !== action.payload) }
         case 'ADD_RONE_WATER_BILL':
-            // Overwrites if same month exists? For simplicity, just append for now, UI handles logic
             return { ...state, roneWaterBills: [...state.roneWaterBills, action.payload] }
         case 'ADD_NEZIO':
             return { ...state, nezioInstallments: [...state.nezioInstallments, action.payload] }
@@ -53,8 +55,10 @@ function reducer(state: AppState, action: Action): AppState {
             return { ...state, debts: state.debts.map(d => d.id === action.payload.id ? action.payload : d) }
         case 'ADD_INVESTMENT':
             return { ...state, investments: [...state.investments, action.payload] }
+        case 'SET_INITIAL_BALANCE':
+            return { ...state, initialBalance: action.payload }
         case 'LOAD_DATA':
-            return action.payload
+            return { ...initialState, ...action.payload }
         default:
             return state
     }
