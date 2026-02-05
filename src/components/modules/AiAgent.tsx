@@ -57,45 +57,76 @@ Qual dessas opções você gostaria de detalhar ou registrar em sua aba de Inves
     // Voice Recognition Setup
     const handleVoiceRecognition = () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Seu navegador não suporta reconhecimento de voz. Tente no Chrome.');
+            const errorMsg = { role: 'ai', text: '❌ Seu navegador não suporta reconhecimento de voz. Use o Chrome, Edge ou Safari mais recente.' };
+            setMessages([...messages, errorMsg as any]);
             return;
         }
 
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'pt-BR';
-        recognition.continuous = false;
-        recognition.interimResults = false;
+        try {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
 
-        recognition.onstart = () => {
-            setIsListening(true);
-        };
+            recognition.onstart = () => {
+                setIsListening(true);
+                if (isOpen) {
+                    setMessages([...messages, { role: 'ai', text: '🎤 Escutando... Fale agora!' } as any]);
+                }
+            };
 
-        recognition.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript;
-            setInput(transcript);
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setInput(transcript);
+                setIsListening(false);
+
+                // Auto-submit after 500ms if agent is open
+                if (isOpen) {
+                    setTimeout(() => {
+                        const userMsg = { role: 'user', text: transcript };
+                        const newMsgs = [...messages.filter(m => m.text !== '🎤 Escutando... Fale agora!'), userMsg] as any;
+                        setMessages(newMsgs);
+                        setInput('');
+                        setIsTyping(true);
+
+                        // Process the voice command
+                        processMessage(transcript, newMsgs);
+                    }, 500);
+                }
+            };
+
+            recognition.onerror = (event: any) => {
+                setIsListening(false);
+                console.error('Voice recognition error:', event.error);
+
+                let errorText = '❌ Erro no reconhecimento de voz.';
+                if (event.error === 'no-speech') {
+                    errorText = '❌ Nenhuma fala detectada. Tente novamente.';
+                } else if (event.error === 'not-allowed') {
+                    errorText = '❌ Permissão de microfone negada. Habilite nas configurações do navegador.';
+                }
+
+                if (isOpen) {
+                    setMessages(prev => [...prev.filter(m => m.text !== '🎤 Escutando... Fale agora!'), { role: 'ai', text: errorText }] as any);
+                }
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognition.start();
+        } catch (error) {
             setIsListening(false);
-        };
-
-        recognition.onerror = () => {
-            setIsListening(false);
-        };
-
-        recognition.onend = () => {
-            setIsListening(false);
-        };
-
-        recognition.start();
+            console.error('Voice recognition error:', error);
+            setMessages([...messages, { role: 'ai', text: '❌ Erro ao iniciar reconhecimento de voz.' }] as any);
+        }
     };
 
-    const handleSend = () => {
-        if (!input.trim()) return
-
-        const userMsg = { role: 'user', text: input }
-        const newMsgs = [...messages, userMsg] as any
-        setMessages(newMsgs)
-        setInput('')
-        setIsTyping(true)
+    // Extract message processing logic
+    const processMessage = (input: string, newMsgs: any[]) => {
 
         // Simple Rule-Based AI Response
         setTimeout(() => {
@@ -157,7 +188,7 @@ Qual dessas opções você gostaria de detalhar ou registrar em sua aba de Inves
             else if (lower.includes('saldo')) {
                 const income = state.transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0)
                 const expense = state.transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0)
-                response = `Seu saldo líquido atual é de R$ ${(income - expense).toFixed(2)}.`
+                response = `Seu saldo líquido atual é de R$ ${(state.initialBalance + income - expense).toFixed(2)}.`
             }
             else if (lower.includes('olá') || lower.includes('oi')) {
                 response = "Olá! Como posso ajudar você a economizar hoje?"
@@ -175,6 +206,18 @@ Qual dessas opções você gostaria de detalhar ou registrar em sua aba de Inves
         }, 800)
     }
 
+    const handleSend = () => {
+        if (!input.trim()) return
+
+        const userMsg = { role: 'user', text: input }
+        const newMsgs = [...messages, userMsg] as any
+        setMessages(newMsgs)
+        setInput('')
+        setIsTyping(true)
+
+        processMessage(input, newMsgs)
+    }
+
     const handleAction = (action: any) => {
         dispatch({ type: action.type, payload: action.payload })
         setMessages([...messages, { role: 'ai', text: `✅ ${action.type === 'ADD_TRANSACTION' ? 'Transação registrada com sucesso!' : 'Ação realizada.'}` }])
@@ -187,8 +230,8 @@ Qual dessas opções você gostaria de detalhar ou registrar em sua aba de Inves
                 <button
                     onClick={handleVoiceRecognition}
                     className={`w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-110 z-50 ${isListening
-                            ? 'bg-red-600 animate-pulse'
-                            : 'bg-zinc-900 border border-zinc-800 hover:bg-zinc-800'
+                        ? 'bg-red-600 animate-pulse'
+                        : 'bg-zinc-900 border border-zinc-800 hover:bg-zinc-800'
                         }`}
                     title="Comando de Voz"
                 >
@@ -257,8 +300,8 @@ Qual dessas opções você gostaria de detalhar ou registrar em sua aba de Inves
                     <button
                         onClick={handleVoiceRecognition}
                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-lg ${isListening
-                                ? 'bg-red-600 animate-pulse'
-                                : 'bg-zinc-800 hover:bg-zinc-700'
+                            ? 'bg-red-600 animate-pulse'
+                            : 'bg-zinc-800 hover:bg-zinc-700'
                             }`}
                         title="Reconhecimento de Voz"
                     >

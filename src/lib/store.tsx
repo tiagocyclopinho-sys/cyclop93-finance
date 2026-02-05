@@ -26,7 +26,7 @@ type Action =
     | { type: 'SET_INITIAL_BALANCE'; payload: number }
     | { type: 'LOAD_DATA'; payload: AppState }
 
-const CURRENT_VERSION = '2.1' // Updated: Pure initial balance, no adjustment transaction
+const CURRENT_VERSION = '2.2' // Voice improvements + hidden date filter
 
 const initialState: AppState = {
     version: CURRENT_VERSION,

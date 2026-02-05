@@ -1,24 +1,51 @@
 "use client"
 import { useApp } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart } from 'lucide-react'
-import { useMemo, useEffect } from 'react'
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter } from 'lucide-react'
+import { useMemo, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
 export default function Dashboard() {
   const { state } = useApp()
+  const [showDateFilter, setShowDateFilter] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
+  // Filter transactions based on date range
+  const filteredTransactions = useMemo(() => {
+    if (!startDate && !endDate) return state.transactions
+
+    return state.transactions.filter(t => {
+      const txDate = new Date(t.date)
+      const start = startDate ? new Date(startDate) : new Date('1900-01-01')
+      const end = endDate ? new Date(endDate) : new Date('2100-12-31')
+      return txDate >= start && txDate <= end
+    })
+  }, [state.transactions, startDate, endDate])
 
   const totals = useMemo(() => {
-    return state.transactions.reduce((acc, t) => {
+    return filteredTransactions.reduce((acc, t) => {
       if (t.type === 'income') acc.income += t.amount
       if (t.type === 'expense') acc.expense += t.amount
       return acc
     }, { income: 0, expense: 0 })
-  }, [state.transactions])
+  }, [filteredTransactions])
 
   const balance = state.initialBalance + totals.income - totals.expense
+
+  // Toggle date filter with Ctrl+Shift+F
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault()
+        setShowDateFilter(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -41,6 +68,57 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Hidden Date Filter - Accessible via Ctrl+Shift+F */}
+      {showDateFilter && (
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Filter className="h-4 w-4 text-yellow-500" />
+            <h3 className="text-sm font-semibold text-white">Filtro de Data</h3>
+            <span className="text-xs text-zinc-500 ml-auto">Ctrl+Shift+F para ocultar</span>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-zinc-400 mb-1 block">Data Inicial</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-zinc-400 mb-1 block">Data Final</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setStartDate('')
+                  setEndDate('')
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Limpar
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-zinc-500">
+            {startDate || endDate ? (
+              <span>
+                Exibindo {filteredTransactions.length} de {state.transactions.length} transações
+              </span>
+            ) : (
+              <span>Nenhum filtro aplicado</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -129,7 +207,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {state.transactions
+                {filteredTransactions
                   .filter(t => !t.status || t.status === 'paid') // Show paid/completed items here mainly
                   .slice(-5).reverse().map(t => (
                     <div key={t.id} className="flex items-center justify-between border-b border-zinc-800 pb-4 last:border-0 last:pb-0">
@@ -153,8 +231,8 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ))}
-                {state.transactions.length === 0 && (
-                  <div className="text-center py-8 text-zinc-500 text-sm">Nenhuma movimentação.</div>
+                {filteredTransactions.length === 0 && (
+                  <div className="text-center py-8 text-zinc-500 text-sm">Nenhuma movimentação no período filtrado.</div>
                 )}
               </div>
             </CardContent>
