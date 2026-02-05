@@ -41,9 +41,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
             >
                 <div className="h-16 flex items-center px-6 border-b">
                     <div className="flex items-center gap-3">
-                        {/* Cyclops Visor Icon */}
-                        <div className="w-10 h-5 bg-zinc-900 rounded-sm border border-zinc-700 relative flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                            <div className="w-full h-1 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] animate-pulse"></div>
+                        {/* Cyclops Visor Image Logo */}
+                        <div className="w-10 h-6 relative shrink-0">
+                            <img src="/icon.png" alt="Cyclop Logo" className="w-full h-full object-contain" />
                         </div>
                         {!isSidebarCollapsed && (
                             <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
@@ -109,8 +109,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <div className="flex items-center gap-4">
                         {/* Logo for both Mobile and Desktop (when sidebar is collapsed or on mobile) */}
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-5 bg-zinc-900 rounded-sm border border-zinc-700 relative flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                                <div className="w-full h-1 bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)] animate-pulse"></div>
+                            <div className="w-10 h-6 relative shrink-0">
+                                <img src="/icon.png" alt="Cyclop Logo" className="w-full h-full object-contain" />
                             </div>
                             <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
                         </div>
