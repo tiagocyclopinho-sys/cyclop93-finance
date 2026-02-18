@@ -10,6 +10,11 @@ const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
 export const metadata: Metadata = {
   title: 'Cyclop Finance',
   description: 'Gestão Financeira Inteligente do Futuro',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  }
 }
 
 export default function RootLayout({
