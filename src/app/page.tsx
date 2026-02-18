@@ -69,45 +69,60 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Date Filter - Always visible as requested */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-sm font-semibold text-white">Filtro por Período</h3>
-          <p className="text-xs text-zinc-500 ml-auto italic">Filtre suas receitas e despesas entre duas datas</p>
-        </div>
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <label className="text-xs font-medium text-zinc-400 mb-1.5 block">Data Inicial</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="text-xs font-medium text-zinc-400 mb-1.5 block">Data Final</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setStartDate('')
-                setEndDate('')
-              }}
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors border border-zinc-700"
-            >
-              Limpar Filtros
-            </button>
-          </div>
-        </div>
+      {/* Toggle Filter Button */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowDateFilter(!showDateFilter)}
+          className={clsx("gap-2 transition-all", showDateFilter ? "bg-zinc-800 text-white" : "text-zinc-400 border-zinc-800")}
+        >
+          <Filter className="h-4 w-4" />
+          {showDateFilter ? 'Ocultar Filtros' : 'Filtrar por Data'}
+        </Button>
       </div>
+
+      {/* Date Filter - Collapsible */}
+      {showDateFilter && (
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 mb-4">
+            <Filter className="h-5 w-5 text-primary" />
+            <h3 className="text-sm font-semibold text-white">Filtro por Período</h3>
+            <p className="text-xs text-zinc-500 ml-auto italic">Filtre suas receitas e despesas entre duas datas</p>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="text-xs font-medium text-zinc-400 mb-1.5 block">Data Inicial</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs font-medium text-zinc-400 mb-1.5 block">Data Final</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setStartDate('')
+                  setEndDate('')
+                }}
+                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors border border-zinc-700"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

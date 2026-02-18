@@ -42,8 +42,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <div className="h-16 flex items-center px-6 border-b">
                     <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         {/* Cyclops Visor Image Logo */}
-                        <div className="w-10 h-6 relative shrink-0">
-                            <img src="/icon.png" alt="Cyclop Logo" className="w-full h-full object-contain" />
+                        {/* Cyclops Visor CSS Logo (Matching requested icon) */}
+                        <div className="w-10 h-5 bg-black border border-zinc-800 rounded-md relative overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(255,0,0,0.2)]">
+                            <div className="w-full h-[2px] bg-red-600 shadow-[0_0_8px_#ff0000,0_0_12px_#ff0000]" />
                         </div>
                         {!isSidebarCollapsed && (
                             <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
@@ -109,8 +110,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <div className="flex items-center gap-4">
                         {/* Logo for both Mobile and Desktop (when sidebar is collapsed or on mobile) */}
                         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                            <div className="w-10 h-6 relative shrink-0">
-                                <img src="/icon.png" alt="Cyclop Logo" className="w-full h-full object-contain" />
+                            <div className="w-10 h-5 bg-black border border-zinc-800 rounded-md relative overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(255,0,0,0.3)]">
+                                <div className="w-full h-[2px] bg-red-600 shadow-[0_0_8px_#ff0000,0_0_12px_#ff0000]" />
                             </div>
                             <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
                         </Link>
