@@ -13,7 +13,7 @@ interface AppState {
     initialBalance: number
 }
 
-const CURRENT_VERSION = '5.0' // Forced reset and enhanced features 2026
+const CURRENT_VERSION = '6.0' // Versão zerada conforme solicitado
 
 const initialState: AppState = {
     version: CURRENT_VERSION,
@@ -23,7 +23,7 @@ const initialState: AppState = {
     nezioInstallments: [],
     debts: [],
     investments: [],
-    initialBalance: 1454.31
+    initialBalance: 0
 }
 
 type Action =
