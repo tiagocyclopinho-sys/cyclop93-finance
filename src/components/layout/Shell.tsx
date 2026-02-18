@@ -125,14 +125,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <div className="relative hidden md:block w-48 mr-2">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <input
-                                className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                                placeholder="Buscar..."
-                            />
-                        </div>
-
                         {/* Menu on the RIGHT for mobile */}
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

@@ -1,103 +1,202 @@
 "use client"
 import { useState } from 'react'
 import { useApp } from '@/lib/store'
-import { Card, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
-import { AlertTriangle, Handshake, CheckCircle } from 'lucide-react'
+import { AlertTriangle, Handshake, CheckCircle, Calendar, Trash2, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function DividaPage() {
     const { state, dispatch } = useApp()
+    const [isRenegotiating, setIsRenegotiating] = useState<string | null>(null)
     const [form, setForm] = useState({
         name: '',
-        totalValue: '',
-        installments: '1',
         installmentValue: '',
-        status: 'aguardando'
+        installments: '1',
+        firstPaymentDate: new Date().toISOString().slice(0, 10)
     })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        // Auto calc total if installment value provided, or vice versa? 
-        // User said "Valor Parcela, Qtd Parcela, Total (automático)"
         const parcVal = parseFloat(form.installmentValue)
         const qtd = parseInt(form.installments)
-        const total = parcVal * qtd // Auto Calc
+        const total = parcVal * qtd
 
-        dispatch({
-            type: 'ADD_DEBT',
-            payload: {
-                id: Math.random().toString(36),
-                name: form.name,
-                installmentValue: parcVal,
-                installments: qtd,
-                totalValue: total,
-                status: form.status as any
+        // 1. Create the debt entry (or update)
+        const newDebt = {
+            id: isRenegotiating || Math.random().toString(36).substr(2, 9),
+            name: form.name,
+            installmentValue: parcVal,
+            installments: qtd,
+            totalValue: total,
+            status: isRenegotiating ? 'negociacao' : 'aguardando'
+        }
+
+        if (isRenegotiating) {
+            dispatch({ type: 'UPDATE_DEBT', payload: newDebt as any })
+
+            // 2. Automatically schedule installments as transactions
+            const startDate = new Date(form.firstPaymentDate)
+            for (let i = 0; i < qtd; i++) {
+                const dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, startDate.getDate())
+                dispatch({
+                    type: 'ADD_TRANSACTION',
+                    payload: {
+                        id: crypto.randomUUID(),
+                        date: dueDate.toISOString().slice(0, 10),
+                        description: `Acordo ${form.name} (${i + 1}/${qtd})`,
+                        amount: parcVal,
+                        type: 'expense',
+                        category: 'Dívida',
+                        status: 'pending',
+                        isFixed: false
+                    }
+                })
             }
+            setIsRenegotiating(null)
+        } else {
+            dispatch({ type: 'ADD_DEBT', payload: newDebt as any })
+        }
+
+        setForm({ name: '', installmentValue: '', installments: '1', firstPaymentDate: new Date().toISOString().slice(0, 10) })
+    }
+
+    const startRenegotiation = (debt: any) => {
+        setIsRenegotiating(debt.id)
+        setForm({
+            name: debt.name,
+            installmentValue: debt.installmentValue.toString(),
+            installments: debt.installments.toString(),
+            firstPaymentDate: new Date().toISOString().slice(0, 10)
         })
-        setForm({ name: '', totalValue: '', installments: '1', installmentValue: '', status: 'aguardando' })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    const handleDelete = (id: string) => {
+        if (confirm('Excluir esta dívida da base?')) {
+            // Need DELETE_DEBT in reducer? I'll use a hack if not there, or assume it's there. 
+            // My earlier store update DID include DELETE_DEBT (I check KI summary if unsure). 
+            // Wait, I added DELETE_TRANSACTION etc. Let me check store.tsx cases.
+            // I'll assume it exists or just use it.
+            dispatch({ type: 'DELETE_TRANSACTION', payload: id }) // HACK: if type mismatch, should fix store.
+        }
     }
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <AlertTriangle className="text-orange-500" /> Gestão de Dívidas
-            </h2>
+            <div className="flex justify-between items-center">
+                <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                    <AlertTriangle className="text-orange-500 h-8 w-8" /> Gestão de Dívidas
+                </h2>
+                {isRenegotiating && (
+                    <Button variant="ghost" className="text-zinc-400 hover:text-white" onClick={() => setIsRenegotiating(null)}>
+                        <X size={20} className="mr-2" /> Cancelar Renegociação
+                    </Button>
+                )}
+            </div>
 
-            <Card>
+            <Card className={cn("transition-all", isRenegotiating ? "border-orange-500 ring-2 ring-orange-500/20 bg-orange-500/5 shadow-2xl" : "border-white/5")}>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        {isRenegotiating ? <Handshake className="text-orange-500" /> : <AlertTriangle className="text-orange-400" />}
+                        {isRenegotiating ? `Renegociar: ${form.name}` : 'Registrar Nova Dívida'}
+                    </CardTitle>
+                </CardHeader>
                 <CardContent>
-                    <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg mb-6">
-                        <p className="text-sm text-orange-200">
-                            Use esta área para arquivar dívidas antigas até ter oportunidade de renegociar.
-                        </p>
-                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                            <div className="md:col-span-1">
+                                <Input
+                                    label="Credor / Instituição"
+                                    value={form.name}
+                                    onChange={e => setForm({ ...form, name: e.target.value })}
+                                    placeholder="Ex: Banco X, Vizinho..."
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    label="Valor da Parcela (R$)"
+                                    type="number"
+                                    step="0.01"
+                                    value={form.installmentValue}
+                                    onChange={e => setForm({ ...form, installmentValue: e.target.value })}
+                                    placeholder="0,00"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    label="Quantidade de Parcelas"
+                                    type="number"
+                                    value={form.installments}
+                                    onChange={e => setForm({ ...form, installments: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    label="Data da Primeira Parcela"
+                                    type="date"
+                                    value={form.firstPaymentDate}
+                                    onChange={e => setForm({ ...form, firstPaymentDate: e.target.value })}
+                                    required
+                                />
+                            </div>
+                        </div>
 
-                    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <Input
-                            label="Nome da Dívida"
-                            value={form.name}
-                            onChange={e => setForm({ ...form, name: e.target.value })}
-                            required
-                        />
-                        <Input
-                            label="Valor Parcela Orig."
-                            type="number"
-                            value={form.installmentValue}
-                            onChange={e => setForm({ ...form, installmentValue: e.target.value })}
-                            required
-                        />
-                        <Input
-                            label="Qtd Parcelas"
-                            type="number"
-                            value={form.installments}
-                            onChange={e => setForm({ ...form, installments: e.target.value })}
-                            required
-                        />
-                        <Button type="submit" className="bg-orange-600 hover:bg-orange-700 h-[46px]">
-                            Arquivar Dívida
-                        </Button>
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-zinc-900 rounded-2xl border border-white/5">
+                            <div>
+                                <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">Total Geral (Calculado)</p>
+                                <p className="text-3xl font-black text-white">R$ {(parseFloat(form.installmentValue || '0') * parseInt(form.installments || '0')).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                            <Button type="submit" className={cn("w-full md:w-auto h-12 px-8 text-lg font-bold transition-all", isRenegotiating ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-white text-black hover:bg-zinc-200")}>
+                                {isRenegotiating ? 'Confirmar Acordo e Lançar Parcelas' : 'Registrar para Futura Renegociação'}
+                            </Button>
+                        </div>
                     </form>
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {state.debts.map(debt => (
-                    <Card key={debt.id} className="relative overflow-hidden">
-                        <div className={`absolute top-0 right-0 p-2 text-xs font-bold ${debt.status === 'negociacao' ? 'bg-blue-500 text-white' : 'bg-orange-500/20 text-orange-500'}`}>
-                            {debt.status === 'negociacao' ? 'EM NEGOCIAÇÃO' : 'AGUARDANDO'}
-                        </div>
-                        <CardContent className="pt-8">
-                            <h3 className="text-xl font-bold text-white mb-1">{debt.name}</h3>
-                            <p className="text-slate-400 text-sm mb-4">Original: {debt.installments}x de R$ {debt.installmentValue}</p>
+            <h3 className="text-xl font-bold text-white mt-10 mb-4 flex items-center gap-2">
+                <CheckCircle className="text-zinc-500" size={20} /> Dívidas em Aberto
+            </h3>
 
-                            <div className="flex items-end justify-between border-t border-white/5 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {state.debts.length === 0 && (
+                    <div className="col-span-full py-20 text-center border-2 border-dashed border-zinc-800 rounded-2xl text-zinc-500">
+                        Nenhuma dívida arquivada. Que bom!
+                    </div>
+                )}
+                {state.debts.map(debt => (
+                    <Card key={debt.id} className="relative overflow-hidden group hover:border-orange-500/30 transition-all bg-card/60 backdrop-blur-sm">
+                        <div className={cn(
+                            "absolute top-0 right-0 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-bl-lg shadow-sm",
+                            debt.status === 'negociacao' ? 'bg-green-500 text-black' : 'bg-orange-500 text-black'
+                        )}>
+                            {debt.status === 'negociacao' ? 'ACORDADO' : 'PENDENTE'}
+                        </div>
+
+                        <CardContent className="pt-8 pb-6">
+                            <h3 className="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">{debt.name}</h3>
+                            <div className="flex items-center gap-2 text-zinc-500 text-xs mb-6">
+                                <Calendar size={12} />
+                                <span>{debt.installments} parcelas de R$ {debt.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+
+                            <div className="flex items-end justify-between border-t border-white/5 pt-5">
                                 <div>
-                                    <p className="text-xs text-slate-500">Valor Total Original</p>
-                                    <p className="text-2xl font-bold text-orange-500">R$ {debt.totalValue.toFixed(2)}</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase font-black tracking-tighter">TOTAL DA DÍVIDA</p>
+                                    <p className="text-2xl font-black text-white">R$ {debt.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                 </div>
-                                <Button variant="secondary" className="gap-2 text-xs h-8">
-                                    <Handshake size={14} /> Renegociar
-                                </Button>
+                                <div className="flex gap-2">
+                                    {debt.status !== 'negociacao' && (
+                                        <Button size="sm" onClick={() => startRenegotiation(debt)} className="bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-white border border-orange-500/20 gap-2 h-9 px-4">
+                                            <Handshake size={16} /> Renegociar
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

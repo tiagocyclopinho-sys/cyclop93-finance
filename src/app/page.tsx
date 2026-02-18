@@ -1,14 +1,14 @@
 "use client"
 import { useApp } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter, Pencil, Trash2 } from 'lucide-react'
 import { useMemo, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
 export default function Dashboard() {
-  const { state } = useApp()
+  const { state, dispatch } = useApp()
   const [showDateFilter, setShowDateFilter] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -69,56 +69,45 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Hidden Date Filter - Accessible via Ctrl+Shift+F */}
-      {showDateFilter && (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Filter className="h-4 w-4 text-yellow-500" />
-            <h3 className="text-sm font-semibold text-white">Filtro de Data</h3>
-            <span className="text-xs text-zinc-500 ml-auto">Ctrl+Shift+F para ocultar</span>
+      {/* Date Filter - Always visible as requested */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="h-5 w-5 text-primary" />
+          <h3 className="text-sm font-semibold text-white">Filtro por Período</h3>
+          <p className="text-xs text-zinc-500 ml-auto italic">Filtre suas receitas e despesas entre duas datas</p>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="text-xs font-medium text-zinc-400 mb-1.5 block">Data Inicial</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            />
           </div>
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1">
-              <label className="text-xs text-zinc-400 mb-1 block">Data Inicial</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs text-zinc-400 mb-1 block">Data Final</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={() => {
-                  setStartDate('')
-                  setEndDate('')
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Limpar
-              </button>
-            </div>
+          <div className="flex-1">
+            <label className="text-xs font-medium text-zinc-400 mb-1.5 block">Data Final</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            />
           </div>
-          <div className="mt-3 text-xs text-zinc-500">
-            {startDate || endDate ? (
-              <span>
-                Exibindo {filteredTransactions.length} de {state.transactions.length} transações
-              </span>
-            ) : (
-              <span>Nenhum filtro aplicado</span>
-            )}
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setStartDate('')
+                setEndDate('')
+              }}
+              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors border border-zinc-700"
+            >
+              Limpar Filtros
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -126,9 +115,8 @@ export default function Dashboard() {
           onClick={() => {
             const agentBtn = document.querySelector('button.fixed.bottom-6.right-6') as HTMLButtonElement;
             if (agentBtn) agentBtn.click();
-            // We'll handle the message in AiAgent component by observing a custom event or similar
             window.dispatchEvent(new CustomEvent('openAiAgent', {
-              detail: { message: "Gostaria de sugestões de investimento para meu saldo disponível. (CDB, FIIs, Ações e BTC)" }
+              detail: { message: "Gostaria de sugestões de investimento para meu saldo disponível." }
             }));
           }}
           className="cursor-pointer transition-transform hover:scale-[1.02]"
@@ -141,7 +129,7 @@ export default function Dashboard() {
             <CardContent>
               <div className={clsx("text-2xl font-bold", balance >= 0 ? "text-white" : "text-red-500")}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
-                <Activity size={10} className="text-primary" /> Sugestões de investimento disponíveis
+                <Activity size={10} className="text-primary" /> Sugestões AI disponíveis
               </p>
             </CardContent>
           </Card>
@@ -150,13 +138,13 @@ export default function Dashboard() {
         <Link href="/entrada" className="transition-transform hover:scale-[1.02]">
           <Card className="hover:bg-green-500/5 transition-colors border-green-500/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">Entradas (Mês)</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Entradas (Período)</CardTitle>
               <ArrowUpRight className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">R$ {totals.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <p className="text-xs text-zinc-500 mt-1">
-                Total recebido no período
+                {startDate || endDate ? 'Total filtrado' : 'Total acumulado'}
               </p>
             </CardContent>
           </Card>
@@ -165,13 +153,13 @@ export default function Dashboard() {
         <Link href="/saidas" className="transition-transform hover:scale-[1.02]">
           <Card className="hover:bg-red-500/5 transition-colors border-red-500/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">Saídas (Mês)</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Saídas (Período)</CardTitle>
               <ArrowDownRight className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-500">R$ {totals.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <p className="text-xs text-zinc-500 mt-1">
-                Total gasto no período
+                {startDate || endDate ? 'Total filtrado' : 'Total acumulado'}
               </p>
             </CardContent>
           </Card>
@@ -193,165 +181,125 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Main Content Area: Charts & Lists */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-
-        {/* Recents Transaction List */}
-        <div className="col-span-4 lg:col-span-4 grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Últimas Transações</CardTitle>
-              <CardDescription>
-                Histórico recente.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredTransactions
-                  .filter(t => !t.status || t.status === 'paid') // Show paid/completed items here mainly
-                  .slice(-5).reverse().map(t => (
-                    <div key={t.id} className="flex items-center justify-between border-b border-zinc-800 pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-4">
-                        <div className={clsx(
-                          "flex h-8 w-8 items-center justify-center rounded-full border",
-                          t.type === 'income' ? "border-green-900 bg-green-900/20" : "border-red-900 bg-red-900/20"
-                        )}>
-                          {t.type === 'income'
-                            ? <ArrowUpRight className="h-4 w-4 text-green-500" />
-                            : <ArrowDownRight className="h-4 w-4 text-red-500" />
-                          }
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium leading-none text-white truncate max-w-[120px]" title={t.description}>{t.description}</p>
-                          <p className="text-xs text-zinc-500">{new Date(t.date).toLocaleDateString()} • {t.category}</p>
-                        </div>
+      {/* Main Content Area: Listas de Transações */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Card Últimas Transações (Now first as requested) */}
+        <Card className="col-span-1 shadow-md border-zinc-800/50">
+          <CardHeader>
+            <CardTitle className="text-primary flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" />
+              Últimas Transações
+            </CardTitle>
+            <CardDescription>
+              Histórico recente (filtrado).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredTransactions
+                .filter(t => !t.status || t.status === 'paid')
+                .slice(-6).reverse().map(t => (
+                  <div key={t.id} className="flex items-center justify-between border-b border-zinc-800/50 pb-4 last:border-0 last:pb-0 group">
+                    <div className="flex items-center gap-4">
+                      <div className={clsx(
+                        "flex h-10 w-10 items-center justify-center rounded-xl border transition-colors",
+                        t.type === 'income' ? "border-green-900/30 bg-green-900/10 text-green-500" : "border-red-900/30 bg-red-900/10 text-red-500"
+                      )}>
+                        {t.type === 'income'
+                          ? <ArrowUpRight className="h-5 w-5" />
+                          : <ArrowDownRight className="h-5 w-5" />
+                        }
                       </div>
-                      <div className={clsx("font-medium text-sm", t.type === 'income' ? "text-green-500" : "text-white")}>
-                        {t.type === 'income' ? '+' : '-'} R$ {t.amount.toFixed(2)}
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold leading-none text-white group-hover:text-primary transition-colors">{t.description}</p>
+                        <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{new Date(t.date).toLocaleDateString('pt-BR')} • {t.category}</p>
                       </div>
                     </div>
-                  ))}
-                {filteredTransactions.length === 0 && (
-                  <div className="text-center py-8 text-zinc-500 text-sm">Nenhuma movimentação no período filtrado.</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    <div className={clsx("font-bold text-sm", t.type === 'income' ? "text-green-500" : "text-white")}>
+                      {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link href={t.type === 'income' ? '/entrada' : '/saidas'}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                          <Pencil size={14} />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (confirm('Excluir esta transação?')) {
+                            dispatch({ type: 'DELETE_TRANSACTION', payload: t.id });
+                          }
+                        }}
+                        className="h-8 w-8 text-zinc-500 hover:text-red-500"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              {filteredTransactions.length === 0 && (
+                <div className="text-center py-12 text-zinc-500 text-sm border-2 border-dashed border-zinc-800 rounded-xl">Nenhuma movimentação no período.</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle className="text-yellow-500 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Agendamentos
-              </CardTitle>
-              <CardDescription>
-                Próximas contas a vencer.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  ...state.transactions.filter(t => t.status === 'pending'),
-                  ...state.nezioInstallments.flatMap(p => {
-                    const schedules = [];
+        {/* Card Agendamentos (Moved after transactions) */}
+        <Card className="col-span-1 shadow-md border-zinc-800/50">
+          <CardHeader>
+            <CardTitle className="text-yellow-500 flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Agendamentos
+            </CardTitle>
+            <CardDescription>
+              Próximas contas a vencer.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                ...state.transactions.filter(t => t.status === 'pending'),
+                ...(() => {
+                  const grouped: Record<string, { total: number, date: string }> = {};
+                  state.nezioInstallments.forEach(p => {
                     const start = new Date(p.date);
-                    const now = new Date();
-
-                    // Generate installments for the next few months if they have not passed
                     for (let i = 0; i < p.totalInstallments; i++) {
                       const dueDate = new Date(start.getFullYear(), start.getMonth() + i, 20);
-                      if (dueDate >= now) {
-                        schedules.push({
-                          id: `${p.id}-${i}`,
-                          description: `${p.establishment} (${i + 1}/${p.totalInstallments})`,
-                          date: dueDate.toISOString().slice(0, 10),
-                          amount: p.amount,
-                          status: 'pending' as const,
-                          type: 'expense' as const
-                        });
+                      const key = dueDate.toISOString().slice(0, 10);
+                      if (dueDate >= new Date()) {
+                        if (!grouped[key]) grouped[key] = { total: 0, date: key };
+                        grouped[key].total += p.amount;
                       }
-                      if (schedules.length >= 5) break;
                     }
-                    return schedules;
-                  })
-                ]
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                  .slice(0, 5)
-                  .map(t => (
-                    <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm text-zinc-200 truncate max-w-[150px]">{t.description}</span>
-                        <span className="text-xs text-yellow-500 font-mono">{new Date(t.date).toLocaleDateString()}</span>
-                      </div>
-                      <span className="font-bold text-sm text-white">R$ {t.amount.toFixed(2)}</span>
+                  });
+                  return Object.values(grouped).map(g => ({
+                    id: `nezio-fat-${g.date}`,
+                    description: `Fatura Cartão Nézio`,
+                    date: g.date,
+                    amount: g.total,
+                    status: 'pending' as const,
+                    type: 'expense' as const
+                  }));
+                })()
+              ]
+                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .slice(0, 6)
+                .map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-900/60 transition-colors">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold text-sm text-zinc-200 truncate max-w-[180px]">{t.description}</span>
+                      <span className="text-xs text-yellow-500/80 font-mono tracking-tighter">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
                     </div>
-                  ))
-                }
-                {(state.transactions.filter(t => t.status === 'pending').length === 0 && state.nezioInstallments.length === 0) && (
-                  <div className="text-center py-8 text-zinc-500 text-sm">Nenhum agendamento futuro.</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions / Status */}
-        <Card className="col-span-3 lg:col-span-3 lg:h-fit">
-          <CardHeader>
-            <CardTitle>Status Financeiro</CardTitle>
-            <CardDescription>Visão rápida dos seus compromissos</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
-              <div className="flex items-center gap-3">
-                <CreditCard className="text-yellow-500 h-5 w-5" />
-                <div>
-                  <p className="text-sm font-medium text-white">Cartão Nézio</p>
-                  <p className="text-xs text-zinc-500">Vencimento: Dia 20</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-white font-bold block">R$ {state.nezioInstallments.reduce((acc, p) => {
-                  const start = new Date(p.date)
-                  const now = new Date()
-                  const monthDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
-                  if (monthDiff >= 0 && monthDiff < p.totalInstallments) return acc + p.amount
-                  return acc
-                }, 0).toFixed(2)}</span>
-                <Link href="/nezio" className="text-[10px] text-yellow-500 hover:underline">Ver faturas</Link>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
-              <div className="flex items-center gap-3">
-                <Droplets className="text-blue-500 h-5 w-5" />
-                <div>
-                  <p className="text-sm font-medium text-white">Rone (Água)</p>
-                  <p className="text-xs text-zinc-500">Pendente de cálculo</p>
-                </div>
-              </div>
-              <Link href="/rone" className="text-xs text-red-500 hover:underline">Calcular agora</Link>
-            </div>
-
-            <div className="pt-4">
-              <h4 className="text-xs font-semibold text-zinc-500 uppercase mb-3">Distribuição de Gastos</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-zinc-400">
-                  <span>Fixas</span>
-                  <span>65%</span>
-                </div>
-                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-600 w-[65%]" />
-                </div>
-
-                <div className="flex justify-between text-xs text-zinc-400 mt-2">
-                  <span>Variáveis</span>
-                  <span>35%</span>
-                </div>
-                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-500 w-[35%]" />
-                </div>
-              </div>
+                    <span className="font-bold text-base text-white">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ))
+              }
+              {(state.transactions.filter(t => t.status === 'pending').length === 0 && state.nezioInstallments.length === 0) && (
+                <div className="text-center py-12 text-zinc-500 text-sm border-2 border-dashed border-zinc-800 rounded-xl">Nenhum agendamento futuro.</div>
+              )}
             </div>
           </CardContent>
         </Card>

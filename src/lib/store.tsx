@@ -13,49 +13,43 @@ interface AppState {
     initialBalance: number
 }
 
-type Action =
-    | { type: 'ADD_TRANSACTION'; payload: Transaction }
-    | { type: 'DELETE_TRANSACTION'; payload: string }
-    | { type: 'ADD_RONE_CONSUMPTION'; payload: RoneConsumption }
-    | { type: 'DELETE_RONE_CONSUMPTION'; payload: string }
-    | { type: 'ADD_RONE_WATER_BILL'; payload: RoneWaterBill }
-    | { type: 'ADD_NEZIO'; payload: NezioInstallment }
-    | { type: 'ADD_DEBT'; payload: Debt }
-    | { type: 'UPDATE_DEBT'; payload: Debt }
-    | { type: 'ADD_INVESTMENT'; payload: Investment }
-    | { type: 'SET_INITIAL_BALANCE'; payload: number }
-    | { type: 'LOAD_DATA'; payload: AppState }
-
-const CURRENT_VERSION = '2.2' // Voice improvements + hidden date filter
+const CURRENT_VERSION = '5.0' // Forced reset and enhanced features 2026
 
 const initialState: AppState = {
     version: CURRENT_VERSION,
     transactions: [],
     roneConsumptions: [],
     roneWaterBills: [],
-    nezioInstallments: [
-        {
-            id: 'netshoes-sample',
-            date: '2026-01-15',
-            description: 'Tênis de Corrida',
-            establishment: 'Netshoes',
-            amount: 145.43,
-            totalAmount: 436.29,
-            installmentIndex: 1,
-            totalInstallments: 3,
-            status: 'pending',
-            lastInstallmentDate: '2026-04-20'
-        }
-    ],
+    nezioInstallments: [],
     debts: [],
     investments: [],
     initialBalance: 1454.31
 }
 
+type Action =
+    | { type: 'ADD_TRANSACTION'; payload: Transaction }
+    | { type: 'UPDATE_TRANSACTION'; payload: Transaction }
+    | { type: 'DELETE_TRANSACTION'; payload: string }
+    | { type: 'ADD_RONE_CONSUMPTION'; payload: RoneConsumption }
+    | { type: 'DELETE_RONE_CONSUMPTION'; payload: string }
+    | { type: 'ADD_RONE_WATER_BILL'; payload: RoneWaterBill }
+    | { type: 'ADD_NEZIO'; payload: NezioInstallment }
+    | { type: 'UPDATE_NEZIO'; payload: NezioInstallment }
+    | { type: 'DELETE_NEZIO'; payload: string }
+    | { type: 'ADD_DEBT'; payload: Debt }
+    | { type: 'UPDATE_DEBT'; payload: Debt }
+    | { type: 'ADD_INVESTMENT'; payload: Investment }
+    | { type: 'UPDATE_INVESTMENT'; payload: Investment }
+    | { type: 'DELETE_INVESTMENT'; payload: string }
+    | { type: 'SET_INITIAL_BALANCE'; payload: number }
+    | { type: 'LOAD_DATA'; payload: AppState }
+
 function reducer(state: AppState, action: Action): AppState {
     switch (action.type) {
         case 'ADD_TRANSACTION':
             return { ...state, transactions: [...state.transactions, action.payload] }
+        case 'UPDATE_TRANSACTION':
+            return { ...state, transactions: state.transactions.map(t => t.id === action.payload.id ? action.payload : t) }
         case 'DELETE_TRANSACTION':
             return { ...state, transactions: state.transactions.filter(t => t.id !== action.payload) }
         case 'ADD_RONE_CONSUMPTION':
@@ -66,12 +60,20 @@ function reducer(state: AppState, action: Action): AppState {
             return { ...state, roneWaterBills: [...state.roneWaterBills, action.payload] }
         case 'ADD_NEZIO':
             return { ...state, nezioInstallments: [...state.nezioInstallments, action.payload] }
+        case 'UPDATE_NEZIO':
+            return { ...state, nezioInstallments: state.nezioInstallments.map(n => n.id === action.payload.id ? action.payload : n) }
+        case 'DELETE_NEZIO':
+            return { ...state, nezioInstallments: state.nezioInstallments.filter(n => n.id !== action.payload) }
         case 'ADD_DEBT':
             return { ...state, debts: [...state.debts, action.payload] }
         case 'UPDATE_DEBT':
             return { ...state, debts: state.debts.map(d => d.id === action.payload.id ? action.payload : d) }
         case 'ADD_INVESTMENT':
             return { ...state, investments: [...state.investments, action.payload] }
+        case 'UPDATE_INVESTMENT':
+            return { ...state, investments: state.investments.map(i => i.id === action.payload.id ? action.payload : i) }
+        case 'DELETE_INVESTMENT':
+            return { ...state, investments: state.investments.filter(i => i.id !== action.payload) }
         case 'SET_INITIAL_BALANCE':
             return { ...state, initialBalance: action.payload }
         case 'LOAD_DATA':
