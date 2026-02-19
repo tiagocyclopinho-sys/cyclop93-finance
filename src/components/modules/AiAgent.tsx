@@ -102,16 +102,20 @@ export function AiAgent() {
             const pendingExpenses = state.transactions.filter(t => t.status === 'pending').reduce((acc, t) => acc + t.amount, 0);
             const nezioTotal = state.nezioInstallments.reduce((a, b) => a + b.amount, 0);
 
-            // 1. Transaction Detection (Voice & Text) - Enhanced with NLP-like logic
+            // 1. Transaction & Command Detection
             const moneyRegex = /(?:r\$|rs|\$|reais)?\s?(\d+(?:[.,]\d{2})?)/i;
             const amountMatch = userInput.match(moneyRegex);
             const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '.')) : 0;
 
             const incomeKeywords = ['recebi', 'ganhei', 'renda', 'entrada', 'pix recebido', 'depósito', 'faturamento', 'salário'];
             const expenseKeywords = ['gastei', 'paguei', 'compra', 'saída', 'pix enviado', 'débito', 'custo', 'despesa', 'fatura'];
+            const investmentKeywords = ['investir', 'aplicar', 'guardar', 'poupar', 'rendimento', 'cdb', 'ação', 'fii', 'cripto'];
+            const debtKeywords = ['dívida', 'devo', 'emprestado', 'renegociar', 'acordo', 'parcelado', 'atrasado'];
 
             const isIncome = incomeKeywords.some(k => lower.includes(k));
             const isExpense = expenseKeywords.some(k => lower.includes(k));
+            const isInvestRequest = investmentKeywords.some(k => lower.includes(k));
+            const isDebtRequest = debtKeywords.some(k => lower.includes(k));
 
             if (amount > 0 && (isIncome || isExpense)) {
                 const type = isIncome ? 'income' : 'expense';
@@ -142,26 +146,40 @@ export function AiAgent() {
                 };
             }
 
-            // 2. Expert Financial Insights
+            // 2. Expert Financial Insights & Advisory
             if (!response) {
-                if (lower.includes('insight') || lower.includes('análise') || lower.includes('como estou') || lower.includes('ajuda')) {
+                if (isInvestRequest) {
+                    if (currentBalance > 1000) {
+                        response = `💰 **Sugestão de Investimento:** Notei que você tem R$ ${currentBalance.toLocaleString('pt-BR')} parados. \n\n1. **Conservador:** CDB 110% CDI (Liquidez Diária) para reserva. \n2. **Moderado:** Fundos Imobiliários (FIIs) para renda mensal. \n3. **Arrojado:** Pequena fatia em BTC ou Ações de tecnologia. \n\nDeseja ver sua aba de investimentos?`;
+                    } else {
+                        response = `🌱 **Dica de Acúmulo:** Antes de investir valores altos, recomendo focar em atingir R$ 1.500,00 de reserva de emergência no seu Saldo Disponível. Atualmente você tem R$ ${currentBalance.toLocaleString('pt-BR')}.`;
+                    }
+                } else if (isDebtRequest) {
+                    const totalDebt = state.debts.reduce((a, b) => a + b.totalValue, 0);
+                    response = `🤝 **Consultoria de Crédito:** Você possui R$ ${totalDebt.toLocaleString('pt-BR')} em dívidas registradas. \n\nPriorize as de juros mais altos (Cartão/Cheque Especial). Se for o caso do Cartão Nézio, lembre-se do pagamento consolidado dia 20 para evitar multas. Posso te levar para a tela de renegociação?`;
+                } else if (lower.includes('insight') || lower.includes('análise') || lower.includes('como estou') || lower.includes('relatório')) {
                     const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
 
-                    if (currentBalance < 500 && pendingExpenses > 200) {
-                        response = `🔍 **Análise Crítica:** Seu fluxo de caixa está em risco. Com R$ ${currentBalance.toFixed(2)} em conta e R$ ${pendingExpenses.toFixed(2)} previstos, sua margem é apertada. Evite gastos supérfluos esta semana.`;
-                    } else if (savingsRate > 20 && investSum < currentBalance) {
-                        response = `📈 **Diagnóstico Expert:** Sua taxa de poupança está excelente (${savingsRate.toFixed(1)}%). Recomendo mover parte do saldo parado (R$ ${currentBalance.toFixed(2)}) para um CDB de liquidez diária.`;
-                    } else if (totalExpense > totalIncome && totalIncome > 0) {
-                        response = `⚠️ **Alerta de Fluxo:** Seus gastos (R$ ${totalExpense.toFixed(2)}) superaram suas entradas. Verifique a aba de Dívidas para renegociações possíveis.`;
+                    let analysis = `📊 **Relatório Estratégico Cyclops:**\n\n`;
+                    analysis += `• **Saldo Atual:** R$ ${currentBalance.toLocaleString('pt-BR')}\n`;
+                    analysis += `• **Taxa de Poupança:** ${savingsRate.toFixed(1)}%\n`;
+                    analysis += `• **Patrimônio nos Ativos:** R$ ${investSum.toLocaleString('pt-BR')}\n\n`;
+
+                    if (savingsRate < 10) {
+                        analysis += `⚠️ **Atenção:** Você está gastando quase tudo que ganha. Recomendo revisar a categoria "Geral" para cortes.`;
+                    } else if (investSum === 0 && currentBalance > 0) {
+                        analysis += `💡 **Insight:** Você já tem saldo para começar a investir. Que tal colocar os primeiros R$ 100 em Renda Fixa hoje?`;
                     } else {
-                        response = `🎯 **Status Estratégico:** Patrimônio líquido total: R$ ${(currentBalance + investSum).toFixed(2)}. Continue monitorando o Cartão Nézio para o dia 20.`;
+                        analysis += `🚀 **Parabéns!** Seu perfil está saudável. Se mantiver este ritmo, seu patrimônio crescerá ${((investSum * 0.01) + 100).toLocaleString('pt-BR')} nos próximos 30 dias.`;
                     }
+                    response = analysis;
                 } else if (lower.includes('saldo') || lower.includes('conta')) {
-                    response = `Seu saldo real agora é **R$ ${currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}**. Projetado para o fim do mês: R$ ${(currentBalance - pendingExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`;
-                } else if (lower.includes('notificação') || lower.includes('celular') || lower.includes('mobile')) {
-                    response = `📱 **Integração Mobile:** Estou monitorando alertas. Quando você receber um PIX ou compra no cartão, eu te avisarei aqui. \n\n**Simulação:** Acabei de detectar uma notificação de compra de R$ 45,90 no Mercado. Deseja lançar?`;
+                    response = `Seu saldo real agora é **R$ ${currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}**. Projetado para o fim do mês (descontando pendências): R$ ${(currentBalance - pendingExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`;
+                } else if (lower.includes('rone')) {
+                    const roneTotal = state.roneConsumptions.reduce((a, b) => a + b.amount, 0);
+                    response = `💧 **Status Rone:** Você já registrou R$ ${roneTotal.toLocaleString('pt-BR')} em consumos este mês. Não esqueça de lançar a conta de água para calcular o acerto final!`;
                 } else {
-                    response = `Olá! Sou seu **Estrategista Cyclops**. Posso processar lançamentos (voz/texto) ou dar insights profundos. Como posso ajudar agora?`;
+                    response = `Olá! Sou o **Estrategista Cyclops**. \n\nDiga-me quanto ganhou ou gastou (voz ou texto), ou peça uma **"análise"** completa da sua saúde financeira. Também entendo de **investimentos** e **estratégias de dívida**. Como posso atuar hoje?`;
                 }
             }
 
