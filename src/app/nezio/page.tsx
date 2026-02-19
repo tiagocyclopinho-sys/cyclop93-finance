@@ -99,22 +99,43 @@ export default function NezioPage() {
                     <CardContent className="space-y-4">
                         {(() => {
                             const now = new Date();
-                            const currentMonthKey = new Date(now.getFullYear(), now.getMonth(), 20).toISOString().slice(0, 10);
-                            const nextMonthKey = new Date(now.getFullYear(), now.getMonth() + 1, 20).toISOString().slice(0, 10);
-
                             const getFaturaTotal = (dateStr: string) => {
                                 let total = 0;
                                 state.nezioInstallments.forEach(p => {
-                                    const start = new Date(p.date);
-                                    // Calculate if this purchase has an installment on this specific day 20
-                                    const targetDate = new Date(dateStr);
-                                    const diffMonths = (targetDate.getFullYear() - start.getFullYear()) * 12 + (targetDate.getMonth() - start.getMonth());
+                                    // Robust cut-off logic: purchases until day 20 fall in the current month's invoice
+                                    const [pYear, pMonth, pDay] = p.date.split('-').map(Number);
+                                    const [tYear, tMonth] = dateStr.split('-').map(Number);
+
+                                    let firstInvYear = pYear;
+                                    let firstInvMonth = pMonth;
+
+                                    if (pDay > 20) {
+                                        firstInvMonth++;
+                                        if (firstInvMonth > 12) {
+                                            firstInvMonth = 1;
+                                            firstInvYear++;
+                                        }
+                                    }
+
+                                    const diffMonths = (tYear - firstInvYear) * 12 + (tMonth - firstInvMonth);
+
                                     if (diffMonths >= 0 && diffMonths < p.totalInstallments) {
                                         total += p.amount;
                                     }
                                 });
                                 return total;
                             };
+
+                            const getInvoiceKey = (year: number, month: number) => {
+                                const m = String(month + 1).padStart(2, '0');
+                                return `${year}-${m}-20`;
+                            };
+
+                            const currentMonthKey = getInvoiceKey(now.getFullYear(), now.getMonth());
+                            const nextMonthKey = getInvoiceKey(
+                                now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear(),
+                                (now.getMonth() + 1) % 12
+                            );
 
                             const currentTotal = getFaturaTotal(currentMonthKey);
                             const nextTotal = getFaturaTotal(nextMonthKey);
@@ -139,7 +160,7 @@ export default function NezioPage() {
                             return (
                                 <>
                                     <div className="p-4 bg-zinc-900 border border-white/5 rounded-xl">
-                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Vencimento 20/{now.getMonth() + 1}</p>
+                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1 text-primary">Vencimento {formatDate(currentMonthKey)}</p>
                                         <p className="text-2xl font-black text-white">R$ {currentTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     </div>
                                     <Button
@@ -150,7 +171,7 @@ export default function NezioPage() {
                                         Agendar Pagamento Único (Dia 20)
                                     </Button>
                                     <div className="p-4 bg-zinc-900/50 border border-white/5 rounded-xl">
-                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Vencimento Próximo Mês</p>
+                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Vencimento {formatDate(nextMonthKey)}</p>
                                         <p className="text-xl font-bold text-zinc-400">R$ {nextTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                     </div>
                                     <p className="text-[10px] text-zinc-500 italic px-1">Lembre-se: O pagamento consolidado no dia 20 evita juros e multas.</p>

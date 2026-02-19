@@ -279,13 +279,39 @@ export default function Dashboard() {
               {[
                 ...state.transactions.filter(t => t.status === 'pending'),
                 ...(() => {
+                  const now = new Date();
                   const grouped: Record<string, { total: number, date: string }> = {};
+
                   state.nezioInstallments.forEach(p => {
-                    const start = new Date(p.date);
+                    const [pYear, pMonth, pDay] = p.date.split('-').map(Number);
+
+                    let firstInvYear = pYear;
+                    let firstInvMonth = pMonth;
+                    if (pDay > 20) {
+                      firstInvMonth++;
+                      if (firstInvMonth > 12) {
+                        firstInvMonth = 1;
+                        firstInvYear++;
+                      }
+                    }
+
                     for (let i = 0; i < p.totalInstallments; i++) {
-                      const dueDate = new Date(start.getFullYear(), start.getMonth() + i, 20);
-                      const key = dueDate.toISOString().slice(0, 10);
-                      if (dueDate >= new Date()) {
+                      let year = firstInvYear;
+                      let month = firstInvMonth + i - 1;
+
+                      const targetMonthTotal = (firstInvMonth + i - 1);
+                      const normalizedYear = firstInvYear + Math.floor(targetMonthTotal / 12);
+                      const normalizedMonth = (targetMonthTotal % 12) + 1;
+
+                      const key = `${normalizedYear}-${String(normalizedMonth).padStart(2, '0')}-20`;
+
+                      // Only show if the date is not in the past (simplified check)
+                      const [nowYear, nowMonth, nowDay] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+                      const isPast = normalizedYear < nowYear ||
+                        (normalizedYear === nowYear && normalizedMonth < nowMonth) ||
+                        (normalizedYear === nowYear && normalizedMonth === nowMonth && nowDay > 20);
+
+                      if (!isPast) {
                         if (!grouped[key]) grouped[key] = { total: 0, date: key };
                         grouped[key].total += p.amount;
                       }
@@ -301,9 +327,7 @@ export default function Dashboard() {
                   }));
                 })()
               ]
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                .slice(0, 6)
-                .map(t => (
+                .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5).map(t => (
                   <div key={t.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-900/60 transition-all group">
                     <div className="flex flex-col gap-1">
                       <span className="font-semibold text-sm text-zinc-200 truncate max-w-[180px]">{t.description}</span>

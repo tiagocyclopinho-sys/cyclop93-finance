@@ -121,6 +121,8 @@ export function AiAgent() {
             if (amount > 0 && (isIncome || isExpense)) {
                 const type = isIncome ? 'income' : 'expense';
                 let category = isIncome ? 'Receita' : 'Geral';
+                const isNezio = lower.includes('nézio') || lower.includes('nezio') || (lower.includes('cartão') && !isIncome);
+
                 if (lower.includes('mercado') || lower.includes('comida') || lower.includes('alimento')) category = 'Alimentação';
                 if (lower.includes('posto') || lower.includes('gasolina') || lower.includes('combustível')) category = 'Transporte';
                 if (lower.includes('lazer') || lower.includes('cinema') || lower.includes('restaurante')) category = 'Lazer';
@@ -129,22 +131,46 @@ export function AiAgent() {
                 const descClean = userInput.replace(amountMatch ? amountMatch[0] : '', '').replace(new RegExp(`(${incomeKeywords.concat(expenseKeywords).join('|')})`, 'gi'), '').trim();
                 const description = descClean || (isIncome ? 'Entrada via IA' : 'Saída via IA');
 
-                response = {
-                    text: `🦾 **Comando Processado:** Detectei um(a) ${isIncome ? 'receita' : 'lançamento de despesa'} de **R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}**. Gostaria que eu registrasse isso agora como "${description}" na categoria ${category}?`,
-                    action: {
-                        label: `Confirmar Lançamento`,
-                        type: 'ADD_TRANSACTION',
-                        payload: {
-                            id: crypto.randomUUID(),
-                            description: description.charAt(0).toUpperCase() + description.slice(1, 40),
-                            amount: amount,
-                            date: getTodayISO(),
-                            type: type,
-                            category: category,
-                            status: 'paid'
+                if (isNezio) {
+                    const installmentMatch = lower.match(/(\d+)\s*x|parcelado\s*em\s*(\d+)/i);
+                    const installments = installmentMatch ? parseInt(installmentMatch[1] || installmentMatch[2]) : 1;
+                    const valParcela = amount / installments;
+
+                    response = {
+                        text: `💳 **Cartão Nézio Detectado:** Identifiquei uma compra de **R$ ${amount.toLocaleString('pt-BR')}** ${installments > 1 ? `em ${installments}x` : ''}. Deseja adicionar este lançamento ao **Cartão Nézio** para o próximo fechamento (dia 20)?`,
+                        action: {
+                            label: `Adicionar ao Cartão`,
+                            type: 'ADD_NEZIO',
+                            payload: {
+                                id: crypto.randomUUID(),
+                                description: description.charAt(0).toUpperCase() + description.slice(1, 40),
+                                establishment: 'IA Detect',
+                                amount: valParcela,
+                                totalAmount: amount,
+                                totalInstallments: installments,
+                                date: getTodayISO(),
+                                status: 'pending'
+                            }
                         }
-                    }
-                };
+                    };
+                } else {
+                    response = {
+                        text: `🦾 **Comando Processado:** Detectei um(a) ${isIncome ? 'receita' : 'lançamento de despesa'} de **R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}**. Gostaria que eu registrasse isso agora como "${description}" na categoria ${category}?`,
+                        action: {
+                            label: `Confirmar Lançamento`,
+                            type: 'ADD_TRANSACTION',
+                            payload: {
+                                id: crypto.randomUUID(),
+                                description: description.charAt(0).toUpperCase() + description.slice(1, 40),
+                                amount: amount,
+                                date: getTodayISO(),
+                                type: type,
+                                category: category,
+                                status: 'paid'
+                            }
+                        }
+                    };
+                }
             }
 
             // 2. Expert Financial Insights & Advisory
