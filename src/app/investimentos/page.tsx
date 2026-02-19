@@ -4,7 +4,7 @@ import { useApp } from '@/lib/store'
 import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
-import { PieChart, TrendingUp, Wallet, ArrowDownCircle, Trash2, Plus, ArrowUpRight } from 'lucide-react'
+import { PieChart, TrendingUp, Wallet, ArrowDownCircle, Trash2, Plus, ArrowUpRight, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function InvestimentosPage() {
@@ -178,9 +178,25 @@ export default function InvestimentosPage() {
                                                 R$ {inv.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                             </p>
                                             {isRescuing !== inv.id ? (
-                                                <div className="flex justify-end gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => setIsRescuing(inv.id)} className="text-purple-400 hover:text-purple-300 text-xs font-bold underline decoration-purple-500/30 underline-offset-4">Informar Retirada / Resgate</button>
-                                                    <button onClick={() => handleDelete(inv.id)} className="text-zinc-500 hover:text-red-500 text-xs">Excluir</button>
+                                                <div className="flex justify-end gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setIsRescuing(inv.id)}
+                                                        className="h-8 w-8 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                                                        title="Informar Retirada / Resgate"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDelete(inv.id)}
+                                                        className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10"
+                                                        title="Excluir"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </Button>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 mt-2 animate-in fade-in slide-in-from-right-2 duration-300">
@@ -211,10 +227,4 @@ export default function InvestimentosPage() {
     )
 }
 
-function X({ size, className }: { size?: number, className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-        </svg>
-    )
-}
+

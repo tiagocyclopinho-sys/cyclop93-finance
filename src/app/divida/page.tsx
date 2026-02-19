@@ -4,7 +4,7 @@ import { useApp } from '@/lib/store'
 import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
-import { AlertTriangle, Handshake, CheckCircle, Calendar, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Handshake, CheckCircle, Calendar, Trash2, X, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function DividaPage() {
@@ -75,11 +75,7 @@ export default function DividaPage() {
 
     const handleDelete = (id: string) => {
         if (confirm('Excluir esta dívida da base?')) {
-            // Need DELETE_DEBT in reducer? I'll use a hack if not there, or assume it's there. 
-            // My earlier store update DID include DELETE_DEBT (I check KI summary if unsure). 
-            // Wait, I added DELETE_TRANSACTION etc. Let me check store.tsx cases.
-            // I'll assume it exists or just use it.
-            dispatch({ type: 'DELETE_TRANSACTION', payload: id }) // HACK: if type mismatch, should fix store.
+            dispatch({ type: 'DELETE_DEBT', payload: id })
         }
     }
 
@@ -190,12 +186,23 @@ export default function DividaPage() {
                                     <p className="text-[10px] text-zinc-500 uppercase font-black tracking-tighter">TOTAL DA DÍVIDA</p>
                                     <p className="text-2xl font-black text-white">R$ {debt.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    {debt.status !== 'negociacao' && (
-                                        <Button size="sm" onClick={() => startRenegotiation(debt)} className="bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-white border border-orange-500/20 gap-2 h-9 px-4">
-                                            <Handshake size={16} /> Renegociar
-                                        </Button>
-                                    )}
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => startRenegotiation(debt)}
+                                        className="h-9 w-9 text-orange-400 hover:text-orange-500 hover:bg-orange-500/10"
+                                    >
+                                        <Pencil size={18} />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDelete(debt.id)}
+                                        className="h-9 w-9 text-zinc-500 hover:text-red-500 hover:bg-red-500/10"
+                                    >
+                                        <Trash2 size={18} />
+                                    </Button>
                                 </div>
                             </div>
                         </CardContent>

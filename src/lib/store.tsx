@@ -38,8 +38,10 @@ type Action =
     | { type: 'DELETE_NEZIO'; payload: string }
     | { type: 'ADD_DEBT'; payload: Debt }
     | { type: 'UPDATE_DEBT'; payload: Debt }
+    | { type: 'DELETE_DEBT'; payload: string }
     | { type: 'ADD_INVESTMENT'; payload: Investment }
     | { type: 'UPDATE_INVESTMENT'; payload: Investment }
+    | { type: 'UPDATE_RONE_CONSUMPTION'; payload: RoneConsumption }
     | { type: 'DELETE_INVESTMENT'; payload: string }
     | { type: 'SET_INITIAL_BALANCE'; payload: number }
     | { type: 'LOAD_DATA'; payload: AppState }
@@ -68,6 +70,10 @@ function reducer(state: AppState, action: Action): AppState {
             return { ...state, debts: [...state.debts, action.payload] }
         case 'UPDATE_DEBT':
             return { ...state, debts: state.debts.map(d => d.id === action.payload.id ? action.payload : d) }
+        case 'DELETE_DEBT':
+            return { ...state, debts: state.debts.filter(d => d.id !== action.payload) }
+        case 'UPDATE_RONE_CONSUMPTION':
+            return { ...state, roneConsumptions: state.roneConsumptions.map(c => c.id === action.payload.id ? action.payload : c) }
         case 'ADD_INVESTMENT':
             return { ...state, investments: [...state.investments, action.payload] }
         case 'UPDATE_INVESTMENT':

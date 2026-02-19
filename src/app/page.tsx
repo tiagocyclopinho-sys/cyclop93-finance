@@ -303,12 +303,34 @@ export default function Dashboard() {
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                 .slice(0, 6)
                 .map(t => (
-                  <div key={t.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-900/60 transition-colors">
+                  <div key={t.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-900/60 transition-all group">
                     <div className="flex flex-col gap-1">
                       <span className="font-semibold text-sm text-zinc-200 truncate max-w-[180px]">{t.description}</span>
                       <span className="text-xs text-yellow-500/80 font-mono tracking-tighter">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
                     </div>
-                    <span className="font-bold text-base text-white">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-base text-white">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link href={t.type === 'income' ? '/entrada' : '/saidas'}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                            <Pencil size={14} />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (confirm('Excluir este agendamento?')) {
+                              dispatch({ type: 'DELETE_TRANSACTION', payload: t.id });
+                            }
+                          }}
+                          className="h-8 w-8 text-zinc-500 hover:text-red-500"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ))
               }

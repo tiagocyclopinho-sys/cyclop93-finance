@@ -4,7 +4,7 @@ import { useApp } from '@/lib/store'
 import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { CreditCard, Calendar, Store } from 'lucide-react'
+import { CreditCard, Calendar, Store, Pencil, Trash2 } from 'lucide-react'
 
 export default function NezioPage() {
     const { state, dispatch } = useApp()
@@ -246,8 +246,22 @@ export default function NezioPage() {
                                                     {isPaid ? 'QUITADO' : 'PENDENTE'}
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => handleEdit(p)} className="text-zinc-500 hover:text-white text-xs underline transition-colors">Editar</button>
-                                                    <button onClick={() => handleDelete(p.id)} className="text-zinc-500 hover:text-red-500 text-xs underline transition-colors">Excluir</button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleEdit(p)}
+                                                        className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/10"
+                                                    >
+                                                        <Pencil size={14} />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDelete(p.id)}
+                                                        className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>

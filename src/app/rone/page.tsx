@@ -4,12 +4,13 @@ import { useApp } from '@/lib/store'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Droplets, Plus, Trash2, Calendar, Coffee, Calculator } from 'lucide-react'
+import { Droplets, Plus, Trash2, Calendar, Coffee, Calculator, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function RonePage() {
     const { state, dispatch } = useApp()
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)) // YYYY-MM
+    const [editingConsId, setEditingConsId] = useState<string | null>(null)
 
     // States for new consumption
     const [consDesc, setConsDesc] = useState('')
@@ -72,17 +73,30 @@ export default function RonePage() {
 
     const handleAddConsumption = () => {
         if (!consDesc || !consAmount) return
-        dispatch({
-            type: 'ADD_RONE_CONSUMPTION',
-            payload: {
-                id: crypto.randomUUID(),
-                date: consDate,
-                description: consDesc,
-                amount: parseFloat(consAmount)
-            }
-        })
+
+        const payload = {
+            id: editingConsId || crypto.randomUUID(),
+            date: consDate,
+            description: consDesc,
+            amount: parseFloat(consAmount)
+        }
+
+        if (editingConsId) {
+            dispatch({ type: 'UPDATE_RONE_CONSUMPTION', payload })
+            setEditingConsId(null)
+        } else {
+            dispatch({ type: 'ADD_RONE_CONSUMPTION', payload })
+        }
+
         setConsDesc('')
         setConsAmount('')
+    }
+
+    const handleEditConsumption = (item: any) => {
+        setEditingConsId(item.id)
+        setConsDesc(item.description)
+        setConsAmount(item.amount.toString())
+        setConsDate(item.date)
     }
 
     const handleSetWaterBill = () => {
@@ -124,12 +138,19 @@ export default function RonePage() {
             <div className="grid gap-6 md:grid-cols-3">
                 {/* Lançamento de Consumo */}
                 <Card className="md:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Coffee className="w-5 h-5 text-orange-500" />
-                            Lançar Consumo
-                        </CardTitle>
-                        <CardDescription>O que você consumiu na lanchonete este mês.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Coffee className="w-5 h-5 text-orange-500" />
+                                {editingConsId ? 'Editar Consumo' : 'Lançar Consumo'}
+                            </CardTitle>
+                            <CardDescription>O que você consumiu na lanchonete este mês.</CardDescription>
+                        </div>
+                        {editingConsId && (
+                            <Button variant="ghost" size="sm" onClick={() => { setEditingConsId(null); setConsDesc(''); setConsAmount(''); }}>
+                                <X size={16} className="mr-1" /> Cancelar
+                            </Button>
+                        )}
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -155,8 +176,8 @@ export default function RonePage() {
                                 onChange={e => setConsAmount(e.target.value)}
                                 className="md:w-32"
                             />
-                            <Button onClick={handleAddConsumption} className="bg-orange-600 hover:bg-orange-700">
-                                <Plus className="w-4 h-4 mr-1" /> Adicionar
+                            <Button onClick={handleAddConsumption} className={cn("font-bold transition-all", editingConsId ? "bg-primary" : "bg-orange-600 hover:bg-orange-700")}>
+                                {editingConsId ? 'Salvar Alterações' : <><Plus className="w-4 h-4 mr-1" /> Adicionar</>}
                             </Button>
                         </div>
 
@@ -174,14 +195,26 @@ export default function RonePage() {
                                                 <span className="text-muted-foreground font-mono text-xs">{new Date(item.date).toLocaleDateString('pt-BR')}</span>
                                                 <span className="font-medium">{item.description}</span>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className="font-bold">R$ {item.amount.toFixed(2)}</span>
-                                                <button
-                                                    onClick={() => handleDeleteConsumption(item.id)}
-                                                    className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold mr-2">R$ {item.amount.toFixed(2)}</span>
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleEditConsumption(item)}
+                                                        className="h-7 w-7 text-zinc-400 hover:text-white"
+                                                    >
+                                                        <Pencil size={14} />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteConsumption(item.id)}
+                                                        className="h-7 w-7 text-zinc-500 hover:text-red-500"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))
