@@ -5,7 +5,7 @@ import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
 import { PieChart, TrendingUp, Wallet, ArrowDownCircle, Trash2, Plus, ArrowUpRight, Pencil, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatDate, getTodayISO } from '@/lib/utils'
 
 export default function InvestimentosPage() {
     const { state, dispatch } = useApp()
@@ -16,7 +16,7 @@ export default function InvestimentosPage() {
         type: 'CDB',
         institution: '',
         amount: '',
-        date: new Date().toISOString().split('T')[0]
+        date: getTodayISO()
     })
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -32,7 +32,7 @@ export default function InvestimentosPage() {
                 type: form.type as any
             }
         })
-        setForm({ ...form, amount: '', institution: '' })
+        setForm({ ...form, amount: '', institution: '', date: getTodayISO() })
     }
 
     const handleRescue = (inv: any) => {
@@ -170,7 +170,7 @@ export default function InvestimentosPage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-white text-lg">{inv.institution}</p>
-                                                <p className="text-xs text-zinc-500 font-medium">{new Date(inv.date).toLocaleDateString('pt-BR')}</p>
+                                                <p className="text-xs text-zinc-500 font-medium">{formatDate(inv.date)}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">

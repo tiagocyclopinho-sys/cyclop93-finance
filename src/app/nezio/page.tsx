@@ -5,6 +5,7 @@ import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { CreditCard, Calendar, Store, Pencil, Trash2 } from 'lucide-react'
+import { formatDate, getTodayISO } from '@/lib/utils'
 
 export default function NezioPage() {
     const { state, dispatch } = useApp()
@@ -12,7 +13,7 @@ export default function NezioPage() {
     const [form, setForm] = useState({
         description: '',
         establishment: '',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayISO(),
         totalValue: '',
         installments: '1'
     })
@@ -84,7 +85,7 @@ export default function NezioPage() {
                     <CreditCard className="text-yellow-500" /> Cartão Nézio
                 </h2>
                 {editingId && (
-                    <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setForm({ ...form, description: '', totalValue: '', installments: '1', establishment: '' }) }}>
+                    <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setForm({ ...form, description: '', totalValue: '', installments: '1', establishment: '', date: getTodayISO() }) }}>
                         Cancelar Edição
                     </Button>
                 )}
@@ -269,7 +270,7 @@ export default function NezioPage() {
                                         <div className="flex items-center gap-6 text-xs text-zinc-400">
                                             <div className="flex items-center gap-1.5">
                                                 <Calendar size={14} className="text-yellow-500" />
-                                                {new Date(p.date).toLocaleDateString('pt-BR')}
+                                                {formatDate(p.date)}
                                             </div>
                                             <div>
                                                 Total: <span className="text-white font-medium">R$ {p.totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>

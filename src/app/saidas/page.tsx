@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
 import { Plus, Trash2, ArrowDownRight, CheckCircle2, Clock, AlertCircle, Calendar, Pencil } from 'lucide-react'
 import { FilterBar } from '@/components/ui/FilterBar'
-import { cn } from '@/lib/utils'
+import { cn, formatDate, getTodayISO } from '@/lib/utils'
 
 export default function ExpensesPage() {
     const { state, dispatch } = useApp()
@@ -15,7 +15,7 @@ export default function ExpensesPage() {
     // New Expense State
     const [desc, setDesc] = useState('')
     const [amount, setAmount] = useState('')
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+    const [date, setDate] = useState(getTodayISO())
     const [category, setCategory] = useState('')
     const [type, setType] = useState('variable') // fixed or variable
     const [status, setStatus] = useState<any>('paid')
@@ -55,7 +55,7 @@ export default function ExpensesPage() {
         setDesc('')
         setAmount('')
         setCategory('')
-        setDate(new Date().toISOString().slice(0, 10))
+        setDate(getTodayISO())
     }
 
     const handleEdit = (t: any) => {
@@ -225,7 +225,7 @@ export default function ExpensesPage() {
                                     <p className="font-bold text-white">{t.description}</p>
                                     <div className="flex items-center gap-2 text-xs text-zinc-500">
                                         <Calendar size={12} />
-                                        <span>{new Date(t.date).toLocaleDateString('pt-BR')}</span>
+                                        <span>{formatDate(t.date)}</span>
                                         <span>•</span>
                                         <span className="bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-lg">{t.category}</span>
                                         {t.isFixed && <span className="text-blue-400 font-bold text-[10px] tracking-tighter uppercase">FIXA</span>}

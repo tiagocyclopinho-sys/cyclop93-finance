@@ -6,6 +6,7 @@ import { useMemo, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+import { formatDate } from '@/lib/utils'
 
 export default function Dashboard() {
   const { state, dispatch } = useApp()
@@ -227,7 +228,7 @@ export default function Dashboard() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm font-semibold leading-none text-white group-hover:text-primary transition-colors">{t.description}</p>
-                        <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{new Date(t.date).toLocaleDateString('pt-BR')} • {t.category}</p>
+                        <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{formatDate(t.date)} • {t.category}</p>
                       </div>
                     </div>
                     <div className={clsx("font-bold text-sm", t.type === 'income' ? "text-green-500" : "text-white")}>
@@ -306,7 +307,7 @@ export default function Dashboard() {
                   <div key={t.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:bg-zinc-900/60 transition-all group">
                     <div className="flex flex-col gap-1">
                       <span className="font-semibold text-sm text-zinc-200 truncate max-w-[180px]">{t.description}</span>
-                      <span className="text-xs text-yellow-500/80 font-mono tracking-tighter">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
+                      <span className="text-xs text-yellow-500/80 font-mono tracking-tighter">{formatDate(t.date)}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="font-bold text-base text-white">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>

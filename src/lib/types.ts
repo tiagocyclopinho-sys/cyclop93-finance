@@ -46,6 +46,7 @@ export interface Debt {
     installmentValue: number
     installments: number
     totalValue: number // calc
+    firstPaymentDate: string // added for convenience
     correctedTotal?: number
     status: 'agora' | 'aguardando' | 'negociacao' | 'pago'
     negotiation?: {

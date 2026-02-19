@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Droplets, Plus, Trash2, Calendar, Coffee, Calculator, Pencil, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatDate, getTodayISO } from '@/lib/utils'
 
 export default function RonePage() {
     const { state, dispatch } = useApp()
@@ -15,7 +15,7 @@ export default function RonePage() {
     // States for new consumption
     const [consDesc, setConsDesc] = useState('')
     const [consAmount, setConsAmount] = useState('')
-    const [consDate, setConsDate] = useState(new Date().toISOString().slice(0, 10))
+    const [consDate, setConsDate] = useState(getTodayISO())
 
     // States for water bill
     const [waterAmount, setWaterAmount] = useState('')
@@ -90,6 +90,7 @@ export default function RonePage() {
 
         setConsDesc('')
         setConsAmount('')
+        setConsDate(getTodayISO())
     }
 
     const handleEditConsumption = (item: any) => {
@@ -192,7 +193,7 @@ export default function RonePage() {
                                     currentConsumptions.map(item => (
                                         <div key={item.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-md border text-sm group">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-muted-foreground font-mono text-xs">{new Date(item.date).toLocaleDateString('pt-BR')}</span>
+                                                <span className="text-muted-foreground font-mono text-xs">{formatDate(item.date)}</span>
                                                 <span className="font-medium">{item.description}</span>
                                             </div>
                                             <div className="flex items-center gap-2">

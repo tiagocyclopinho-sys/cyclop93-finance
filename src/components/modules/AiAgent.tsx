@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '@/lib/store'
 import { MessageSquare, X, Send, Sparkles, Mic, MicOff } from 'lucide-react'
+import { getTodayISO } from '@/lib/utils'
 
 export function AiAgent() {
     const { state, dispatch } = useApp()
@@ -137,7 +138,7 @@ export function AiAgent() {
                             id: crypto.randomUUID(),
                             description: description.charAt(0).toUpperCase() + description.slice(1, 40),
                             amount: amount,
-                            date: new Date().toISOString().slice(0, 10),
+                            date: getTodayISO(),
                             type: type,
                             category: category,
                             status: 'paid'

@@ -5,7 +5,7 @@ import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
 import { AlertTriangle, Handshake, CheckCircle, Calendar, Trash2, X, Pencil } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatDate, getTodayISO } from '@/lib/utils'
 
 export default function DividaPage() {
     const { state, dispatch } = useApp()
@@ -14,7 +14,7 @@ export default function DividaPage() {
         name: '',
         installmentValue: '',
         installments: '1',
-        firstPaymentDate: new Date().toISOString().slice(0, 10)
+        firstPaymentDate: getTodayISO()
     })
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -30,6 +30,7 @@ export default function DividaPage() {
             installmentValue: parcVal,
             installments: qtd,
             totalValue: total,
+            firstPaymentDate: form.firstPaymentDate,
             status: isRenegotiating ? 'negociacao' : 'aguardando'
         }
 
@@ -59,7 +60,7 @@ export default function DividaPage() {
             dispatch({ type: 'ADD_DEBT', payload: newDebt as any })
         }
 
-        setForm({ name: '', installmentValue: '', installments: '1', firstPaymentDate: new Date().toISOString().slice(0, 10) })
+        setForm({ name: '', installmentValue: '', installments: '1', firstPaymentDate: getTodayISO() })
     }
 
     const startRenegotiation = (debt: any) => {
@@ -68,7 +69,7 @@ export default function DividaPage() {
             name: debt.name,
             installmentValue: debt.installmentValue.toString(),
             installments: debt.installments.toString(),
-            firstPaymentDate: new Date().toISOString().slice(0, 10)
+            firstPaymentDate: getTodayISO()
         })
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -178,7 +179,7 @@ export default function DividaPage() {
                             <h3 className="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">{debt.name}</h3>
                             <div className="flex items-center gap-2 text-zinc-500 text-xs mb-6">
                                 <Calendar size={12} />
-                                <span>{debt.installments} parcelas de R$ {debt.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span>{debt.installments} parcelas de R$ {debt.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Vence {formatDate(debt.firstPaymentDate)})</span>
                             </div>
 
                             <div className="flex items-end justify-between border-t border-white/5 pt-5">
