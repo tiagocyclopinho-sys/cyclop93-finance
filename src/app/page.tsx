@@ -6,7 +6,7 @@ import { useMemo, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { formatDate } from '@/lib/utils'
+import { formatDate, getTodayISO } from '@/lib/utils'
 
 export default function Dashboard() {
   const { state, dispatch } = useApp()
@@ -103,7 +103,7 @@ export default function Dashboard() {
         id: crypto.randomUUID(),
         description: 'Ajuste de Sincronização Bancária',
         amount: amount,
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayISO(),
         type: type,
         category: 'Ajuste',
         status: 'paid'
@@ -220,7 +220,7 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className={clsx("text-2xl font-bold", balance >= 0 ? "text-white" : "text-red-500")}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className={clsx("text-2xl font-bold", totalAccountBalance >= 0 ? "text-white" : "text-red-500")}>R$ {totalAccountBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
               <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
                 <Activity size={10} className="text-primary" /> Sugestões AI disponíveis
               </p>
