@@ -11,7 +11,7 @@ export function AiAgent() {
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string, action?: any }[]>([
         { role: 'ai', text: 'Fala, mestre. Sou o **Cyclops**. Vi que seu saldo mudou. Quer que eu faça um raio-x das suas contas ou vamos direto pros investimentos?' }
     ])
-    const [lastTopic, setLastTopic] = useState<string | null>(null)
+    const lastTopicRef = useRef<string | null>(null)
     const [input, setInput] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -140,40 +140,42 @@ export function AiAgent() {
 
             // 2. STRATEGIC CONVERSATION (The "Soul" of Cyclops)
             if (!response) {
+                const topic = lastTopicRef.current;
+
                 // Handle "WHY?" based on memory
-                if (isFollowUpWhy && lastTopic) {
-                    if (lastTopic === 'reserva') {
-                        response = `**Por que R$ 1.500?** Porque esse valor é o seu 'seguro contra imprevistos'. Se o pneu do carro fura ou o Rone quebra, você não precisa se endividar. É o básico da dignidade financeira antes de pensar em bolsa de valores. Ficou claro agora?`;
-                    } else if (lastTopic === 'investimento') {
-                        response = `Porque inflação é um imposto silencioso. Se seu dinheiro tá no saldo, o banco tá ganhando e você tá perdendo poder de compra. Juros compostos só funcionam se você der o primeiro passo.`;
-                    } else if (lastTopic === 'divida') {
-                        response = `Porque juros de dívida no Brasil são abusivos. Trabalhar para pagar juros é o oposto de prosperar. Temos que fechar essa torneira primeiro.`;
+                if (isFollowUpWhy && topic) {
+                    if (topic === 'reserva') {
+                        response = `**Por que R$ 1.500?** É o seu 'seguro dignidade'. Sem isso, qualquer susto (fone quebrado, pneu furado, imprevisto do Rone) te joga pro cheque especial. É a base da sua pirâmide financeira. Captou a ideia?`;
+                    } else if (topic === 'investimento') {
+                        response = `Simples: dinheiro parado no saldo é lucro pro banco e prejuízo pra você. O tempo é seu maior ativo, não desperdice ele deixando seu saldo derreter na inflação.`;
+                    } else if (topic === 'divida') {
+                        response = `Porque juros é o 'aluguel' que você paga pelo dinheiro dos outros. No Brasil, esse aluguel é extorsivo. Pagar dívida é o primeiro passo pra você começar a ser quem recebe os juros, não quem paga.`;
                     }
                 }
                 // Context: Investing
                 else if (isInvestRequest) {
                     if (currentBalance < 1500) {
-                        setLastTopic('reserva');
+                        lastTopicRef.current = 'reserva';
                         response = `🌱 **Visão Realista:** Você tá querendo falar de FIIs com saldo de R$ ${currentBalance.toLocaleString('pt-BR')}? Minha regra é clara: primeiro você monta sua **Reserva de Emergência** de pelo menos R$ 1.500. Depois a gente fala de mercado. O que acha de focar na reserva esse mês?`;
                     } else {
-                        setLastTopic('investimento');
+                        lastTopicRef.current = 'investimento';
                         const selicPot = (currentBalance * 0.009).toLocaleString('pt-BR');
-                        response = `💰 **Oportunidade:** Seu saldo de R$ ${currentBalance.toLocaleString('pt-BR')} parado é lucro pro banco. Num CDB 100% renderia uns **R$ ${selicPot}** extras por mês. Bora parar de deixar dinheiro na mesa?`;
+                        response = `💰 **Oportunidade de Ouro:** Seu saldo de R$ ${currentBalance.toLocaleString('pt-BR')} parado tá sendo subutilizado. No Tesouro Selic renderia uns **R$ ${selicPot}** extras por mês. Bora parar de ser bonzinho com o banco?`;
                     }
                 }
                 // Context: Debts
                 else if (isDebtRequest) {
-                    setLastTopic('divida');
-                    response = `🛡️ **Raio-X de Passivos:** Você tem **R$ ${totalDebtTotal.toLocaleString('pt-BR')}** em aberto. Se for o Nézio, cuidado com o dia 20. Dívida não se ignora, se ataca. Quer que eu te mostre o plano pra zerar isso?`;
+                    lastTopicRef.current = 'divida';
+                    response = `🛡️ **Raio-X de Passivos:** Você tem **R$ ${totalDebtTotal.toLocaleString('pt-BR')}** em aberto. Se for o Nézio, cuidado com o dia 20. Dívida não se ignora, se ataca com estratégia. Quer ver o plano de ataque?`;
                 }
                 // Context: General Analysis
-                else if (lower.includes('analise') || lower.includes('estratégia')) {
+                else if (lower.includes('analise') || lower.includes('estratégia') || lower.includes('insigth')) {
                     const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
                     response = `🧠 **Diagnóstico Estratégico:** Sua taxa de poupança está em **${savingsRate.toFixed(1)}%**. \n\n${savingsRate > 20 ? '🚀 Você tá voando! Hora de aumentar os aportes.' : '⚠️ Você tá operando no limite. Se um pneu furar, o sistema cai. Vamos revisar os gastos variáveis?'}\n\nO que quer atacar primeiro: Reservas ou Investimentos?`;
                 }
                 // Default with context
                 else {
-                    response = `Fala, mestre. Tô aqui monitorando seus R$ ${currentBalance.toLocaleString('pt-BR')}. Quer lançar um gasto real, entender por que seu dinheiro não rende ou quer um diagnóstico bruto da sua situação?`;
+                    response = `Fala, capitão. Tô analisando aqui seus R$ ${currentBalance.toLocaleString('pt-BR')}. Quer registrar um gasto real, entender pra onde seu dinheiro tá fugindo ou quer que eu te convença a investir o que sobrou?`;
                 }
             }
 
@@ -219,7 +221,7 @@ export function AiAgent() {
                     <div className="w-8 h-8 rounded bg-red-600 flex items-center justify-center">
                         <div className="w-6 h-1 bg-yellow-400"></div>
                     </div>
-                    <span className="font-bold text-white">Cyclops AI Expert</span>
+                    <span className="font-bold text-white">Cyclops Strategist v2.1</span>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white bg-white/5 p-1 rounded-full"><X size={16} /></button>
             </div>
