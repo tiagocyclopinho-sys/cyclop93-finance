@@ -11,7 +11,10 @@ import { formatDate } from '@/lib/utils'
 export default function Dashboard() {
   const { state, dispatch } = useApp()
   const [showDateFilter, setShowDateFilter] = useState(false)
-  const [startDate, setStartDate] = useState('')
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  })
   const [endDate, setEndDate] = useState('')
 
   // Filter transactions based on date range
@@ -250,7 +253,7 @@ export default function Dashboard() {
                     <div className={clsx("font-bold text-sm", t.type === 'income' ? "text-green-500" : "text-white")}>
                       {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
-                    <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-2 ml-4">
                       <Link href={t.type === 'income' ? '/entrada' : '/saidas'}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
                           <Pencil size={14} />
@@ -351,7 +354,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="font-bold text-base text-white">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1">
                         <Button
                           variant="ghost"
                           size="icon"

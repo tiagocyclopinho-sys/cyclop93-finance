@@ -22,12 +22,16 @@ export default function ExpensesPage() {
     const [status, setStatus] = useState<any>('paid')
 
     // Filter State
-    const [filters, setFilters] = useState<any>({
-        startDate: '',
-        endDate: '',
-        category: '',
-        status: '',
-        sortBy: 'date-desc'
+    const [filters, setFilters] = useState<any>(() => {
+        const now = new Date();
+        const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        return {
+            startDate: start,
+            endDate: '',
+            category: '',
+            status: '',
+            sortBy: 'date-desc'
+        }
     })
 
     const categories = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros']
@@ -131,13 +135,14 @@ export default function ExpensesPage() {
                         </p>
                     </CardContent>
                 </Card>
-                <Link href="/nezio" className="block">
-                    <Card className="bg-blue-500/5 border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                <Link href="/nezio" className="block text-right">
+                    <Card className="bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20 transition-colors">
                         <CardContent className="p-4">
-                            <p className="text-xs text-zinc-500 font-bold uppercase mb-1">Cartão Nézio (Total)</p>
+                            <p className="text-[10px] text-blue-400 font-bold uppercase mb-1 tracking-widest">Nézio (Saldo Devedor)</p>
                             <p className="text-2xl font-black text-white">
                                 R$ {state.nezioInstallments
-                                    .reduce((acc, t) => acc + t.totalAmount, 0)
+                                    .filter(t => t.status === 'pending')
+                                    .reduce((acc, t) => acc + t.amount, 0)
                                     .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                         </CardContent>
@@ -254,10 +259,16 @@ export default function ExpensesPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex gap-2">
                                     {t.status === 'pending' && (
-                                        <Button size="sm" variant="outline" className="h-8 text-xs px-2" onClick={() => handlePay(t)}>
-                                            Pagar
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-8 w-8 text-green-500 hover:bg-green-500/10"
+                                            onClick={() => handlePay(t)}
+                                            title="Marcar como Pago"
+                                        >
+                                            <CheckCircle2 size={16} />
                                         </Button>
                                     )}
                                     <Button

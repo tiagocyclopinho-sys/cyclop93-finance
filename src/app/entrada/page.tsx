@@ -19,11 +19,15 @@ export default function IncomePage() {
     const [category, setCategory] = useState('')
 
     // Filter State
-    const [filters, setFilters] = useState<any>({
-        startDate: '',
-        endDate: '',
-        category: '',
-        sortBy: 'date-desc'
+    const [filters, setFilters] = useState<any>(() => {
+        const now = new Date();
+        const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        return {
+            startDate: start,
+            endDate: '',
+            category: '',
+            sortBy: 'date-desc'
+        }
     })
 
     const categories = ['Salário', 'Ajuda de Custo', 'Aluguel', 'Freelance', 'Vendas', 'Outros']
@@ -201,7 +205,7 @@ export default function IncomePage() {
                             </div>
                             <div className="flex items-center gap-4">
                                 <span className="text-lg font-black text-green-500 tracking-tight">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1">
                                     <Button
                                         variant="ghost"
                                         size="icon"
