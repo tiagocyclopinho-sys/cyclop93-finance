@@ -9,8 +9,9 @@ export function AiAgent() {
     const [isOpen, setIsOpen] = useState(false)
     const [isListening, setIsListening] = useState(false)
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string, action?: any }[]>([
-        { role: 'ai', text: 'Olá! Sou o Estrategista Cyclops. Analise seus dados ou use o comando de voz para lançamentos!' }
+        { role: 'ai', text: 'Fala, mestre. Sou o **Cyclops**. Vi que seu saldo mudou. Quer que eu faça um raio-x das suas contas ou vamos direto pros investimentos?' }
     ])
+    const [lastTopic, setLastTopic] = useState<string | null>(null)
     const [input, setInput] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -95,122 +96,84 @@ export function AiAgent() {
             const lower = userInput.toLowerCase();
             let response: any = "";
 
-            // State Data for Analysis - PRECISE DATA
+            // --- BRAIN DATA ---
             const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-            const totalExpense = state.transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const totalExpense = state.transactions.filter(t => t.type === 'expense' && t.status === 'paid').reduce((acc, t) => acc + t.amount, 0);
             const investSum = state.investments.reduce((a, b) => a + b.amount, 0);
             const currentBalance = state.initialBalance + totalIncome - totalExpense;
             const pendingExpenses = state.transactions.filter(t => t.status === 'pending').reduce((acc, t) => acc + t.amount, 0);
-            const nezioTotal = state.nezioInstallments.reduce((a, b) => a + b.amount, 0);
+            const nezioTotal = state.nezioInstallments.filter(t => t.status === 'pending').reduce((acc, t) => acc + t.amount, 0);
+            const totalDebtTotal = state.debts.reduce((a, b) => a + b.totalValue, 0) + nezioTotal;
 
-            // 1. Transaction & Command Detection
+            // --- CONTEXT & INTENT ---
+            const isFollowUpWhy = lower.includes('por que') || lower.includes('pq') || lower.includes('explica');
+            const isInvestRequest = lower.includes('investir') || lower.includes('aplicar') || lower.includes('fii') || lower.includes('cdb') || lower.includes('sugestão');
+            const isDebtRequest = lower.includes('dívida') || lower.includes('devo') || lower.includes('nézio') || lower.includes('renegocia');
+
+            // 1. TRANSACTION LOGIC (Precise Detection)
             const moneyRegex = /(?:r\$|rs|\$|reais)?\s?(\d+(?:[.,]\d{2})?)/i;
             const amountMatch = userInput.match(moneyRegex);
             const amount = amountMatch ? parseFloat(amountMatch[1].replace(',', '.')) : 0;
 
-            const incomeKeywords = ['recebi', 'ganhei', 'renda', 'entrada', 'pix recebido', 'depósito', 'faturamento', 'salário'];
-            const expenseKeywords = ['gastei', 'paguei', 'compra', 'saída', 'pix enviado', 'débito', 'custo', 'despesa', 'fatura'];
-            const investmentKeywords = ['investir', 'aplicar', 'guardar', 'poupar', 'rendimento', 'cdb', 'ação', 'fii', 'cripto'];
-            const debtKeywords = ['dívida', 'devo', 'emprestado', 'renegociar', 'acordo', 'parcelado', 'atrasado'];
-
-            const isIncome = incomeKeywords.some(k => lower.includes(k));
-            const isExpense = expenseKeywords.some(k => lower.includes(k));
-            const isInvestRequest = investmentKeywords.some(k => lower.includes(k));
-            const isDebtRequest = debtKeywords.some(k => lower.includes(k));
-
-            if (amount > 0 && (isIncome || isExpense)) {
+            if (amount > 0 && (lower.includes('gastei') || lower.includes('recebi') || lower.includes('paguei') || lower.includes('ganhei'))) {
+                const isIncome = ['recebi', 'ganhei', 'salário', 'pix'].some(k => lower.includes(k));
                 const type = isIncome ? 'income' : 'expense';
-                let category = isIncome ? 'Receita' : 'Geral';
-                const isNezio = lower.includes('nézio') || lower.includes('nezio') || (lower.includes('cartão') && !isIncome);
+                const description = userInput.replace(moneyRegex, '').replace(/(gastei|paguei|recebi|ganhei|lança|adiciona)/gi, '').trim() || 'Lançamento via IA';
 
-                if (lower.includes('mercado') || lower.includes('comida') || lower.includes('alimento')) category = 'Alimentação';
-                if (lower.includes('posto') || lower.includes('gasolina') || lower.includes('combustível')) category = 'Transporte';
-                if (lower.includes('lazer') || lower.includes('cinema') || lower.includes('restaurante')) category = 'Lazer';
-                if (lower.includes('aluguel') || lower.includes('luz') || lower.includes('água')) category = 'Moradia';
-
-                const descClean = userInput.replace(amountMatch ? amountMatch[0] : '', '').replace(new RegExp(`(${incomeKeywords.concat(expenseKeywords).join('|')})`, 'gi'), '').trim();
-                const description = descClean || (isIncome ? 'Entrada via IA' : 'Saída via IA');
-
-                if (isNezio) {
-                    const installmentMatch = lower.match(/(\d+)\s*x|parcelado\s*em\s*(\d+)/i);
-                    const installments = installmentMatch ? parseInt(installmentMatch[1] || installmentMatch[2]) : 1;
-                    const valParcela = amount / installments;
-
-                    response = {
-                        text: `💳 **Cartão Nézio Detectado:** Identifiquei uma compra de **R$ ${amount.toLocaleString('pt-BR')}** ${installments > 1 ? `em ${installments}x` : ''}. Deseja adicionar este lançamento ao **Cartão Nézio** para o próximo fechamento (dia 20)?`,
-                        action: {
-                            label: `Adicionar ao Cartão`,
-                            type: 'ADD_NEZIO',
-                            payload: {
-                                id: crypto.randomUUID(),
-                                description: description.charAt(0).toUpperCase() + description.slice(1, 40),
-                                establishment: 'IA Detect',
-                                amount: valParcela,
-                                totalAmount: amount,
-                                totalInstallments: installments,
-                                date: getTodayISO(),
-                                status: 'pending'
-                            }
+                response = {
+                    text: `🦾 **Lançamento Detectado:** Quer que eu registre R$ ${amount.toLocaleString('pt-BR')} como "${description}"?`,
+                    action: {
+                        label: `Confirmar`,
+                        type: 'ADD_TRANSACTION',
+                        payload: {
+                            id: crypto.randomUUID(),
+                            description: description.charAt(0).toUpperCase() + description.slice(1, 40),
+                            amount: amount,
+                            date: getTodayISO(),
+                            type: type,
+                            category: isIncome ? 'Salário' : 'Geral',
+                            status: 'paid'
                         }
-                    };
-                } else {
-                    response = {
-                        text: `🦾 **Comando Processado:** Detectei um(a) ${isIncome ? 'receita' : 'lançamento de despesa'} de **R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}**. Gostaria que eu registrasse isso agora como "${description}" na categoria ${category}?`,
-                        action: {
-                            label: `Confirmar Lançamento`,
-                            type: 'ADD_TRANSACTION',
-                            payload: {
-                                id: crypto.randomUUID(),
-                                description: description.charAt(0).toUpperCase() + description.slice(1, 40),
-                                amount: amount,
-                                date: getTodayISO(),
-                                type: type,
-                                category: category,
-                                status: 'paid'
-                            }
-                        }
-                    };
-                }
+                    }
+                };
             }
 
-            // 2. Expert Financial Insights & Advisory (The Strategic Brain)
+            // 2. STRATEGIC CONVERSATION (The "Soul" of Cyclops)
             if (!response) {
-                const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
-                const totalDebt = state.debts.reduce((a, b) => a + b.totalValue, 0) + nezioTotal;
-
-                if (isInvestRequest || lower.includes('investir') || lower.includes('aplicar')) {
-                    if (currentBalance > 2000) {
-                        const selicEst = (currentBalance * 0.009).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                        response = `💰 **Visão de Mercado:** Com a SELIC atual, seu saldo parado de R$ ${currentBalance.toLocaleString('pt-BR')} está perdendo cerca de **R$ ${selicEst} todo mês** para a inflação. 
-                        \n\n**Estratégia Recomendada:** 
-                        1. **Reserva de Emergência:** CDB 100% CDI com Liquidez Diária.
-                        2. **Renda Passiva:** Fundos Imobiliários (FIIs) para dividendos isentos.
-                        3. **Crescimento:** Diversificação em ETFs globais.
-                        \nAcesse a aba de **Investimentos** para simular aportes.`;
-                    } else {
-                        response = `🌱 **Fase de Acúmulo:** Antes de diversificar, foque em montar sua 'Reserva de Paz'. O objetivo é ter 6 meses do seu custo de vida em um ativo seguro. Você está construindo sua base agora.`;
+                // Handle "WHY?" based on memory
+                if (isFollowUpWhy && lastTopic) {
+                    if (lastTopic === 'reserva') {
+                        response = `**Por que R$ 1.500?** Porque esse valor é o seu 'seguro contra imprevistos'. Se o pneu do carro fura ou o Rone quebra, você não precisa se endividar. É o básico da dignidade financeira antes de pensar em bolsa de valores. Ficou claro agora?`;
+                    } else if (lastTopic === 'investimento') {
+                        response = `Porque inflação é um imposto silencioso. Se seu dinheiro tá no saldo, o banco tá ganhando e você tá perdendo poder de compra. Juros compostos só funcionam se você der o primeiro passo.`;
+                    } else if (lastTopic === 'divida') {
+                        response = `Porque juros de dívida no Brasil são abusivos. Trabalhar para pagar juros é o oposto de prosperar. Temos que fechar essa torneira primeiro.`;
                     }
-                } else if (isDebtRequest || totalDebt > 0 && (lower.includes('dívida') || lower.includes('ajuda'))) {
-                    response = `🛡️ **Defesa Financeira:** Você possui um passivo total de **R$ ${totalDebt.toLocaleString('pt-BR')}** (em aberto). 
-                    \n\n**Tática Avalanche:** Foque em liquidar o Cartão Nézio ou dívidas com juros compostos primeiro. 
-                    \n**Tática Bola de Neve:** Pague a dívida menor primeiro para ganhar fôlego psicológico. Qual dessas você prefere atacar hoje?`;
-                } else if (lower.includes('analise') || lower.includes('estratégia') || lower.includes('como estou') || lower.includes('relatório')) {
-                    let strategy = `🧠 **Diagnóstico do Estrategista Cyclops:**\n\n`;
-                    strategy += `• **Taxa de Poupança:** ${savingsRate.toFixed(1)}% ${savingsRate > 20 ? '🚀 (Excelente)' : '⚠️ (Abaixo dos 20% ideais)'}\n`;
-                    strategy += `• **Patrimônio atual:** R$ ${investSum.toLocaleString('pt-BR')}\n\n`;
-
-                    if (savingsRate < 10) {
-                        strategy += `🚨 **Alerta de Lifestyle Creep:** Seu custo de vida está muito próximo da sua renda. Recomendo um corte de 10% nas despesas variáveis para gerar fluxo de caixa.`;
-                    } else if (currentBalance > 1000 && investSum === 0) {
-                        strategy += `💡 **Custo de Oportunidade:** Você tem saldo em conta, mas sua carteira de investimentos está zerada. O tempo é o maior aliado dos juros compostos. Comece com R$ 100, mas comece hoje.`;
+                }
+                // Context: Investing
+                else if (isInvestRequest) {
+                    if (currentBalance < 1500) {
+                        setLastTopic('reserva');
+                        response = `🌱 **Visão Realista:** Você tá querendo falar de FIIs com saldo de R$ ${currentBalance.toLocaleString('pt-BR')}? Minha regra é clara: primeiro você monta sua **Reserva de Emergência** de pelo menos R$ 1.500. Depois a gente fala de mercado. O que acha de focar na reserva esse mês?`;
                     } else {
-                        strategy += `📈 **Próximo Nível:** Sua base está sólida. O segredo agora é buscar novas fontes de renda ou otimizar aportes para acelerar sua liberdade financeira.`;
+                        setLastTopic('investimento');
+                        const selicPot = (currentBalance * 0.009).toLocaleString('pt-BR');
+                        response = `💰 **Oportunidade:** Seu saldo de R$ ${currentBalance.toLocaleString('pt-BR')} parado é lucro pro banco. Num CDB 100% renderia uns **R$ ${selicPot}** extras por mês. Bora parar de deixar dinheiro na mesa?`;
                     }
-                    response = strategy;
-                } else if (lower.includes('comprar') || lower.includes('mercado') || lower.includes('gasto')) {
-                    response = `🛒 **Mindset de Consumo:** Notei um interesse em novos gastos. Lembre-se: O preço de um item não é apenas o valor na etiqueta, mas quantas horas do seu trabalho ele custa. Essa compra 'paga' a alegria que ela traz?`;
-                } else {
-                    response = `Olá! Sou seu **Estrategista Financeiro**. \n\nNão apenas registro contas, eu analiso seu **Custo de Oportunidade**, sua **Taxa de Poupança** e sua **Liberdade Financeira**. \n\nDiga-me um valor para lançar ou peça uma **"análise estratégica"**.`;
+                }
+                // Context: Debts
+                else if (isDebtRequest) {
+                    setLastTopic('divida');
+                    response = `🛡️ **Raio-X de Passivos:** Você tem **R$ ${totalDebtTotal.toLocaleString('pt-BR')}** em aberto. Se for o Nézio, cuidado com o dia 20. Dívida não se ignora, se ataca. Quer que eu te mostre o plano pra zerar isso?`;
+                }
+                // Context: General Analysis
+                else if (lower.includes('analise') || lower.includes('estratégia')) {
+                    const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
+                    response = `🧠 **Diagnóstico Estratégico:** Sua taxa de poupança está em **${savingsRate.toFixed(1)}%**. \n\n${savingsRate > 20 ? '🚀 Você tá voando! Hora de aumentar os aportes.' : '⚠️ Você tá operando no limite. Se um pneu furar, o sistema cai. Vamos revisar os gastos variáveis?'}\n\nO que quer atacar primeiro: Reservas ou Investimentos?`;
+                }
+                // Default with context
+                else {
+                    response = `Fala, mestre. Tô aqui monitorando seus R$ ${currentBalance.toLocaleString('pt-BR')}. Quer lançar um gasto real, entender por que seu dinheiro não rende ou quer um diagnóstico bruto da sua situação?`;
                 }
             }
 
