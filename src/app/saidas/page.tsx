@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { useApp } from '@/lib/store'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -107,30 +108,41 @@ export default function ExpensesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-white">Saídas</h2>
-                    <p className="text-muted-foreground">Controle de despesas, fixas e variáveis.</p>
-                </div>
-
-                <div className="flex items-center gap-2 bg-card p-1.5 rounded-lg border shadow-sm">
-                    <Calendar size={16} className="text-muted-foreground ml-2" />
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="date"
-                            className="bg-transparent border-none text-xs focus:ring-0 p-1"
-                            value={filters.startDate}
-                            onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-                        />
-                        <span className="text-muted-foreground">-</span>
-                        <input
-                            type="date"
-                            className="bg-transparent border-none text-xs focus:ring-0 p-1"
-                            value={filters.endDate}
-                            onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-                        />
-                    </div>
-                </div>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card className="bg-green-500/5 border-green-500/10">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-zinc-500 font-bold uppercase mb-1">Total Pago</p>
+                        <p className="text-2xl font-black text-green-500">
+                            R$ {state.transactions
+                                .filter(t => t.type === 'expense' && t.status === 'paid')
+                                .reduce((acc, t) => acc + t.amount, 0)
+                                .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-yellow-500/5 border-yellow-500/10">
+                    <CardContent className="p-4">
+                        <p className="text-xs text-zinc-500 font-bold uppercase mb-1">Total Pendente</p>
+                        <p className="text-2xl font-black text-yellow-500">
+                            R$ {state.transactions
+                                .filter(t => t.type === 'expense' && t.status === 'pending')
+                                .reduce((acc, t) => acc + t.amount, 0)
+                                .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                    </CardContent>
+                </Card>
+                <Link href="/nezio" className="block">
+                    <Card className="bg-blue-500/5 border-blue-500/10 hover:bg-blue-500/10 transition-colors">
+                        <CardContent className="p-4">
+                            <p className="text-xs text-zinc-500 font-bold uppercase mb-1">Cartão Nézio (Total)</p>
+                            <p className="text-2xl font-black text-white">
+                                R$ {state.nezioInstallments
+                                    .reduce((acc, t) => acc + t.totalAmount, 0)
+                                    .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
 
             <Card className={cn(editingId && "border-red-500/50 ring-1 ring-red-500/20 shadow-lg transition-all")}>

@@ -1,7 +1,7 @@
 "use client"
 import { useApp } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter, Pencil, Trash2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter, Pencil, Trash2, Check } from 'lucide-react'
 import { useMemo, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -28,6 +28,9 @@ export default function Dashboard() {
 
   const totals = useMemo(() => {
     return filteredTransactions.reduce((acc, t) => {
+      // Only sum transactions that are NOT pending or overdue
+      if (t.status && t.status !== 'paid') return acc
+
       if (t.type === 'income') acc.income += t.amount
       if (t.type === 'expense') acc.expense += t.amount
       return acc
@@ -47,6 +50,19 @@ export default function Dashboard() {
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [])
+
+  const handleMarkAsPaid = (transaction: any) => {
+    if (transaction.id.startsWith('nezio-fat')) {
+      // If it's a consolidated Nezio payment, we should ideally go to the Nezio page or handle it specially.
+      // For now, let's just alert
+      alert('Para pagar a fatura do Cartão Nézio, use o botão "Agendar Pagamento Único" na página do Cartão Nézio.');
+      return;
+    }
+    dispatch({
+      type: 'UPDATE_TRANSACTION',
+      payload: { ...transaction, status: 'paid' }
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -139,7 +155,7 @@ export default function Dashboard() {
         >
           <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">Saldo Disponível</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Saldo Atual (Efetivado)</CardTitle>
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -154,7 +170,7 @@ export default function Dashboard() {
         <Link href="/entrada" className="transition-transform hover:scale-[1.02]">
           <Card className="hover:bg-green-500/5 transition-colors border-green-500/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">Entradas (Período)</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Entradas (Efetivadas)</CardTitle>
               <ArrowUpRight className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
@@ -169,7 +185,7 @@ export default function Dashboard() {
         <Link href="/saidas" className="transition-transform hover:scale-[1.02]">
           <Card className="hover:bg-red-500/5 transition-colors border-red-500/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">Saídas (Período)</CardTitle>
+              <CardTitle className="text-sm font-medium text-zinc-400">Saídas (Efetivadas)</CardTitle>
               <ArrowDownRight className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
@@ -336,6 +352,15 @@ export default function Dashboard() {
                     <div className="flex items-center gap-4">
                       <span className="font-bold text-base text-white">R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMarkAsPaid(t)}
+                          className="h-8 w-8 text-green-600 hover:text-green-500 hover:bg-green-500/10"
+                          title="Marcar como pago"
+                        >
+                          <Check size={14} />
+                        </Button>
                         <Link href={t.type === 'income' ? '/entrada' : '/saidas'}>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
                             <Pencil size={14} />
