@@ -173,40 +173,44 @@ export function AiAgent() {
                 }
             }
 
-            // 2. Expert Financial Insights & Advisory
+            // 2. Expert Financial Insights & Advisory (The Strategic Brain)
             if (!response) {
-                if (isInvestRequest) {
-                    if (currentBalance > 1000) {
-                        response = `💰 **Sugestão de Investimento:** Notei que você tem R$ ${currentBalance.toLocaleString('pt-BR')} parados. \n\n1. **Conservador:** CDB 110% CDI (Liquidez Diária) para reserva. \n2. **Moderado:** Fundos Imobiliários (FIIs) para renda mensal. \n3. **Arrojado:** Pequena fatia em BTC ou Ações de tecnologia. \n\nDeseja ver sua aba de investimentos?`;
-                    } else {
-                        response = `🌱 **Dica de Acúmulo:** Antes de investir valores altos, recomendo focar em atingir R$ 1.500,00 de reserva de emergência no seu Saldo Disponível. Atualmente você tem R$ ${currentBalance.toLocaleString('pt-BR')}.`;
-                    }
-                } else if (isDebtRequest) {
-                    const totalDebt = state.debts.reduce((a, b) => a + b.totalValue, 0);
-                    response = `🤝 **Consultoria de Crédito:** Você possui R$ ${totalDebt.toLocaleString('pt-BR')} em dívidas registradas. \n\nPriorize as de juros mais altos (Cartão/Cheque Especial). Se for o caso do Cartão Nézio, lembre-se do pagamento consolidado dia 20 para evitar multas. Posso te levar para a tela de renegociação?`;
-                } else if (lower.includes('insight') || lower.includes('análise') || lower.includes('como estou') || lower.includes('relatório')) {
-                    const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
+                const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0;
+                const totalDebt = state.debts.reduce((a, b) => a + b.totalValue, 0) + nezioTotal;
 
-                    let analysis = `📊 **Relatório Estratégico Cyclops:**\n\n`;
-                    analysis += `• **Saldo Atual:** R$ ${currentBalance.toLocaleString('pt-BR')}\n`;
-                    analysis += `• **Taxa de Poupança:** ${savingsRate.toFixed(1)}%\n`;
-                    analysis += `• **Patrimônio nos Ativos:** R$ ${investSum.toLocaleString('pt-BR')}\n\n`;
+                if (isInvestRequest || lower.includes('investir') || lower.includes('aplicar')) {
+                    if (currentBalance > 2000) {
+                        const selicEst = (currentBalance * 0.009).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        response = `💰 **Visão de Mercado:** Com a SELIC atual, seu saldo parado de R$ ${currentBalance.toLocaleString('pt-BR')} está perdendo cerca de **R$ ${selicEst} todo mês** para a inflação. 
+                        \n\n**Estratégia Recomendada:** 
+                        1. **Reserva de Emergência:** CDB 100% CDI com Liquidez Diária.
+                        2. **Renda Passiva:** Fundos Imobiliários (FIIs) para dividendos isentos.
+                        3. **Crescimento:** Diversificação em ETFs globais.
+                        \nAcesse a aba de **Investimentos** para simular aportes.`;
+                    } else {
+                        response = `🌱 **Fase de Acúmulo:** Antes de diversificar, foque em montar sua 'Reserva de Paz'. O objetivo é ter 6 meses do seu custo de vida em um ativo seguro. Você está construindo sua base agora.`;
+                    }
+                } else if (isDebtRequest || totalDebt > 0 && (lower.includes('dívida') || lower.includes('ajuda'))) {
+                    response = `🛡️ **Defesa Financeira:** Você possui um passivo total de **R$ ${totalDebt.toLocaleString('pt-BR')}** (em aberto). 
+                    \n\n**Tática Avalanche:** Foque em liquidar o Cartão Nézio ou dívidas com juros compostos primeiro. 
+                    \n**Tática Bola de Neve:** Pague a dívida menor primeiro para ganhar fôlego psicológico. Qual dessas você prefere atacar hoje?`;
+                } else if (lower.includes('analise') || lower.includes('estratégia') || lower.includes('como estou') || lower.includes('relatório')) {
+                    let strategy = `🧠 **Diagnóstico do Estrategista Cyclops:**\n\n`;
+                    strategy += `• **Taxa de Poupança:** ${savingsRate.toFixed(1)}% ${savingsRate > 20 ? '🚀 (Excelente)' : '⚠️ (Abaixo dos 20% ideais)'}\n`;
+                    strategy += `• **Patrimônio atual:** R$ ${investSum.toLocaleString('pt-BR')}\n\n`;
 
                     if (savingsRate < 10) {
-                        analysis += `⚠️ **Atenção:** Você está gastando quase tudo que ganha. Recomendo revisar a categoria "Geral" para cortes.`;
-                    } else if (investSum === 0 && currentBalance > 0) {
-                        analysis += `💡 **Insight:** Você já tem saldo para começar a investir. Que tal colocar os primeiros R$ 100 em Renda Fixa hoje?`;
+                        strategy += `🚨 **Alerta de Lifestyle Creep:** Seu custo de vida está muito próximo da sua renda. Recomendo um corte de 10% nas despesas variáveis para gerar fluxo de caixa.`;
+                    } else if (currentBalance > 1000 && investSum === 0) {
+                        strategy += `💡 **Custo de Oportunidade:** Você tem saldo em conta, mas sua carteira de investimentos está zerada. O tempo é o maior aliado dos juros compostos. Comece com R$ 100, mas comece hoje.`;
                     } else {
-                        analysis += `🚀 **Parabéns!** Seu perfil está saudável. Se mantiver este ritmo, seu patrimônio crescerá ${((investSum * 0.01) + 100).toLocaleString('pt-BR')} nos próximos 30 dias.`;
+                        strategy += `📈 **Próximo Nível:** Sua base está sólida. O segredo agora é buscar novas fontes de renda ou otimizar aportes para acelerar sua liberdade financeira.`;
                     }
-                    response = analysis;
-                } else if (lower.includes('saldo') || lower.includes('conta')) {
-                    response = `Seu saldo real agora é **R$ ${currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}**. Projetado para o fim do mês (descontando pendências): R$ ${(currentBalance - pendingExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`;
-                } else if (lower.includes('rone')) {
-                    const roneTotal = state.roneConsumptions.reduce((a, b) => a + b.amount, 0);
-                    response = `💧 **Status Rone:** Você já registrou R$ ${roneTotal.toLocaleString('pt-BR')} em consumos este mês. Não esqueça de lançar a conta de água para calcular o acerto final!`;
+                    response = strategy;
+                } else if (lower.includes('comprar') || lower.includes('mercado') || lower.includes('gasto')) {
+                    response = `🛒 **Mindset de Consumo:** Notei um interesse em novos gastos. Lembre-se: O preço de um item não é apenas o valor na etiqueta, mas quantas horas do seu trabalho ele custa. Essa compra 'paga' a alegria que ela traz?`;
                 } else {
-                    response = `Olá! Sou o **Estrategista Cyclops**. \n\nDiga-me quanto ganhou ou gastou (voz ou texto), ou peça uma **"análise"** completa da sua saúde financeira. Também entendo de **investimentos** e **estratégias de dívida**. Como posso atuar hoje?`;
+                    response = `Olá! Sou seu **Estrategista Financeiro**. \n\nNão apenas registro contas, eu analiso seu **Custo de Oportunidade**, sua **Taxa de Poupança** e sua **Liberdade Financeira**. \n\nDiga-me um valor para lançar ou peça uma **"análise estratégica"**.`;
                 }
             }
 
