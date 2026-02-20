@@ -216,7 +216,7 @@ export function AiAgent() {
 
     return (
         <div className="fixed bottom-6 right-6 w-[90vw] md:w-96 h-[500px] bg-[#0F172A] border border-red-500/30 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden animate-fade-in font-sans">
-            <div className="p-4 bg-red-600/10 border-b border-red-500/20 flex justify-between items-center backdrop-blur">
+            <div className="p-4 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-b border-purple-500/30 flex justify-between items-center backdrop-blur">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded bg-red-600 flex items-center justify-center">
                         <div className="w-6 h-1 bg-yellow-400"></div>
