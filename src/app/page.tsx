@@ -1,7 +1,7 @@
 "use client"
 import { useApp } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter, Pencil, Trash2, Check } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Activity, CreditCard, Droplets, Calendar, PieChart, Filter, Pencil, Trash2, Check, RefreshCw } from 'lucide-react'
 import { useMemo, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -42,6 +42,15 @@ export default function Dashboard() {
 
   const balance = state.initialBalance + totals.income - totals.expense
 
+  const totalAccountBalance = useMemo(() => {
+    return state.transactions.reduce((acc, t) => {
+      if (t.status && t.status !== 'paid') return acc
+      if (t.type === 'income') return acc + t.amount
+      if (t.type === 'expense') return acc - t.amount
+      return acc
+    }, state.initialBalance)
+  }, [state.transactions, state.initialBalance])
+
   // Toggle date filter with Ctrl+Shift+F
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -65,6 +74,43 @@ export default function Dashboard() {
       type: 'UPDATE_TRANSACTION',
       payload: { ...transaction, status: 'paid' }
     });
+  }
+
+  const handleSyncBalance = () => {
+    const realBalance = prompt('Informe o saldo ATUAL da sua conta bancária (ex: 184,14):');
+    if (!realBalance) return;
+
+    const realValue = parseFloat(realBalance.replace(',', '.'));
+    if (isNaN(realValue)) {
+      alert('Valor inválido!');
+      return;
+    }
+
+    const currentBalance = totalAccountBalance;
+    const diff = realValue - currentBalance;
+
+    if (Math.abs(diff) < 0.01) {
+      alert('O saldo já está sincronizado!');
+      return;
+    }
+
+    const type = diff > 0 ? 'income' : 'expense';
+    const amount = Math.abs(diff);
+
+    dispatch({
+      type: 'ADD_TRANSACTION',
+      payload: {
+        id: crypto.randomUUID(),
+        description: 'Ajuste de Sincronização Bancária',
+        amount: amount,
+        date: new Date().toISOString().split('T')[0],
+        type: type,
+        category: 'Ajuste',
+        status: 'paid'
+      }
+    });
+
+    alert(`Ajuste de R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} realizado com sucesso!`);
   }
 
   return (
@@ -91,15 +137,27 @@ export default function Dashboard() {
 
       {/* Toggle Filter Button */}
       <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowDateFilter(!showDateFilter)}
-          className={clsx("gap-2 transition-all", showDateFilter ? "bg-zinc-800 text-white" : "text-zinc-400 border-zinc-800")}
-        >
-          <Filter className="h-4 w-4" />
-          {showDateFilter ? 'Ocultar Filtros' : 'Filtrar por Data'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleSyncBalance}
+            className="border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 gap-2 font-bold"
+          >
+            <RefreshCw size={16} />
+            Sincronizar Saldo
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className={clsx(
+              "gap-2 font-medium transition-all",
+              showDateFilter ? "bg-primary text-white border-primary" : "bg-zinc-900 text-zinc-400 border-zinc-800"
+            )}
+          >
+            <Filter size={16} />
+            {showDateFilter ? 'Fechar Filtros' : 'Filtrar Data'}
+          </Button>
+        </div>
       </div>
 
       {/* Date Filter - Collapsible */}
