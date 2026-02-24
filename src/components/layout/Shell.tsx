@@ -47,7 +47,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                             <div className="w-full h-[2px] bg-red-600 shadow-[0_0_8px_#ff0000,0_0_12px_#ff0000]" />
                         </div>
                         {!isSidebarCollapsed && (
-                            <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
+                            <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span> <span className="text-[10px] text-zinc-600 font-mono">v6.1</span></span>
                         )}
                     </Link>
                 </div>
@@ -113,7 +113,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                             <div className="w-10 h-5 bg-black border border-zinc-800 rounded-md relative overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(255,0,0,0.3)]">
                                 <div className="w-full h-[2px] bg-red-600 shadow-[0_0_8px_#ff0000,0_0_12px_#ff0000]" />
                             </div>
-                            <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span></span>
+                            <span className="font-bold text-lg tracking-tight font-heading">Cyclop<span className="text-red-500">93</span> <span className="text-[10px] text-zinc-600 font-mono">v6.1</span></span>
                         </Link>
 
                         <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground ml-4">
