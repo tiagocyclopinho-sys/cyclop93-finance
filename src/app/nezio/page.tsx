@@ -5,7 +5,7 @@ import { Card, CardTitle, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { CreditCard, Calendar, Store, Pencil, Trash2 } from 'lucide-react'
-import { formatDate, getTodayISO } from '@/lib/utils'
+import { formatDate, getTodayISO, cn } from '@/lib/utils'
 
 export default function NezioPage() {
     const { state, dispatch } = useApp()
@@ -67,6 +67,10 @@ export default function NezioPage() {
         }
     }
 
+    const [showArchived, setShowArchived] = useState(false)
+    const [filterStart, setFilterStart] = useState('')
+    const [filterEnd, setFilterEnd] = useState('')
+
     const getStatus = (purchase: any) => {
         const start = new Date(purchase.date)
         const now = new Date()
@@ -78,17 +82,49 @@ export default function NezioPage() {
         return { paidCount, remaining }
     }
 
+    const filteredSpend = state.nezioInstallments.filter(p => {
+        if (!filterStart && !filterEnd) return true
+        const pDate = new Date(p.date)
+        const start = filterStart ? new Date(filterStart) : new Date('1900-01-01')
+        const end = filterEnd ? new Date(filterEnd) : new Date('2100-12-31')
+        return pDate >= start && pDate <= end
+    }).reduce((acc, p) => acc + p.totalAmount, 0)
+
+    const activeInstallments = state.nezioInstallments.filter(p => getStatus(p).remaining > 0)
+    const archivedInstallments = state.nezioInstallments.filter(p => getStatus(p).remaining === 0)
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                     <CreditCard className="text-yellow-500" /> Cartão Nézio
                 </h2>
-                {editingId && (
-                    <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setForm({ ...form, description: '', totalValue: '', installments: '1', establishment: '', date: getTodayISO() }) }}>
-                        Cancelar Edição
-                    </Button>
-                )}
+                <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 p-1 rounded-lg">
+                        <input
+                            type="date"
+                            value={filterStart}
+                            onChange={e => setFilterStart(e.target.value)}
+                            className="bg-transparent text-[10px] text-zinc-300 outline-none p-1"
+                        />
+                        <span className="text-zinc-600 text-[10px]">até</span>
+                        <input
+                            type="date"
+                            value={filterEnd}
+                            onChange={e => setFilterEnd(e.target.value)}
+                            className="bg-transparent text-[10px] text-zinc-300 outline-none p-1"
+                        />
+                        <div className="px-3 border-l border-white/10 ml-1">
+                            <p className="text-[8px] text-zinc-500 uppercase font-bold tracking-tighter">Gasto no Período</p>
+                            <p className="text-xs font-black text-white">R$ {filteredSpend.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                    </div>
+                    {editingId && (
+                        <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setForm({ ...form, description: '', totalValue: '', installments: '1', establishment: '', date: getTodayISO() }) }}>
+                            Cancelar
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -242,17 +278,35 @@ export default function NezioPage() {
                 </Card>
 
                 <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Fatura e Parcelamentos</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle>Faturas e Parcelamentos</CardTitle>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowArchived(false)}
+                                className={cn("text-[10px] font-bold px-3", !showArchived ? "bg-yellow-500/10 text-yellow-500" : "text-zinc-500")}
+                            >
+                                PENDENTES ({activeInstallments.length})
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowArchived(true)}
+                                className={cn("text-[10px] font-bold px-3", showArchived ? "bg-green-500/10 text-green-500" : "text-zinc-500")}
+                            >
+                                QUITADOS ({archivedInstallments.length})
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="mt-4">
                         <div className="space-y-4">
-                            {state.nezioInstallments.length === 0 && (
+                            {(showArchived ? archivedInstallments : activeInstallments).length === 0 && (
                                 <div className="text-center py-12 text-zinc-500 border-2 border-dashed border-zinc-800 rounded-xl">
-                                    Nenhuma compra parcelada registrada.
+                                    {showArchived ? 'Nenhum item quitado.' : 'Nenhuma compra parcelada registrada.'}
                                 </div>
                             )}
-                            {state.nezioInstallments.map((p: any) => {
+                            {(showArchived ? archivedInstallments : activeInstallments).map((p: any) => {
                                 const { paidCount, remaining } = getStatus(p)
                                 const isPaid = remaining === 0
 
@@ -323,3 +377,4 @@ export default function NezioPage() {
         </div>
     )
 }
+

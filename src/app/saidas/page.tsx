@@ -138,12 +138,37 @@ export default function ExpensesPage() {
                 <Link href="/nezio" className="block text-right">
                     <Card className="bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20 transition-colors">
                         <CardContent className="p-4">
-                            <p className="text-[10px] text-blue-400 font-bold uppercase mb-1 tracking-widest">Nézio (Saldo Devedor)</p>
+                            <p className="text-[10px] text-blue-400 font-bold uppercase mb-1 tracking-widest">Nézio (A Pagar Este Mês)</p>
                             <p className="text-2xl font-black text-white">
-                                R$ {state.nezioInstallments
-                                    .filter(t => t.status === 'pending')
-                                    .reduce((acc, t) => acc + t.amount, 0)
-                                    .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                R$ {(() => {
+                                    const now = new Date();
+                                    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-20`;
+
+                                    // 1. Calculate what is due this month based on installments
+                                    let dueThisMonth = 0;
+                                    state.nezioInstallments.forEach(p => {
+                                        const [pYear, pMonth, pDay] = p.date.split('-').map(Number);
+                                        let firstInvYear = pYear, firstInvMonth = pMonth;
+                                        if (pDay > 20) {
+                                            firstInvMonth++;
+                                            if (firstInvMonth > 12) { firstInvMonth = 1; firstInvYear++; }
+                                        }
+                                        const diffMonths = (now.getFullYear() - firstInvYear) * 12 + ((now.getMonth() + 1) - firstInvMonth);
+                                        if (diffMonths >= 0 && diffMonths < p.totalInstallments) {
+                                            dueThisMonth += p.amount;
+                                        }
+                                    });
+
+                                    // 2. Subtract what was already paid for this specific month's consolidated Nezio invoice
+                                    const paidThisMonth = state.transactions
+                                        .filter(t => t.description.toLowerCase().includes('nézio') &&
+                                            t.status === 'paid' &&
+                                            t.date === currentMonthKey)
+                                        .reduce((acc, t) => acc + t.amount, 0);
+
+                                    const remaining = dueThisMonth - paidThisMonth;
+                                    return (remaining > 0 ? remaining : 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                                })()}
                             </p>
                         </CardContent>
                     </Card>

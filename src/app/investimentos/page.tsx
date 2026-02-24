@@ -23,15 +23,33 @@ export default function InvestimentosPage() {
         e.preventDefault()
         if (!form.amount) return
 
+        const amountValue = parseFloat(form.amount)
+
+        // 1. Add Investment
         dispatch({
             type: 'ADD_INVESTMENT',
             payload: {
                 id: Math.random().toString(36).substr(2, 9),
                 ...form,
-                amount: parseFloat(form.amount),
+                amount: amountValue,
                 type: form.type as any
             }
         })
+
+        // 2. Add Expense Transaction to discount from Saldo Atual
+        dispatch({
+            type: 'ADD_TRANSACTION',
+            payload: {
+                id: crypto.randomUUID(),
+                date: form.date,
+                description: `Aporte ${form.type} (${form.institution})`,
+                amount: amountValue,
+                type: 'expense',
+                category: 'Investimentos',
+                status: 'paid'
+            }
+        })
+
         setForm({ ...form, amount: '', institution: '', date: getTodayISO() })
     }
 
@@ -47,7 +65,7 @@ export default function InvestimentosPage() {
             type: 'ADD_TRANSACTION',
             payload: {
                 id: crypto.randomUUID(),
-                date: new Date().toISOString().slice(0, 10),
+                date: getTodayISO(),
                 description: `Resgate ${inv.type} (${inv.institution})`,
                 amount: amountToRescue,
                 type: 'income',
@@ -127,7 +145,7 @@ export default function InvestimentosPage() {
                                 required
                             />
                             <Input
-                                label="Valor (R$)"
+                                label="Valor do Aporte (R$)"
                                 type="number"
                                 step="0.01"
                                 value={form.amount}
@@ -184,31 +202,34 @@ export default function InvestimentosPage() {
                                                         size="icon"
                                                         onClick={() => setIsRescuing(inv.id)}
                                                         className="h-8 w-8 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-                                                        title="Informar Retirada / Resgate"
+                                                        title="Resgatar / Vender / Retirar"
                                                     >
-                                                        <Pencil size={16} />
+                                                        <ArrowDownCircle size={16} />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() => handleDelete(inv.id)}
                                                         className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10"
-                                                        title="Excluir"
+                                                        title="Excluir Registro"
                                                     >
                                                         <Trash2 size={16} />
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-2 mt-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                                                    <input
-                                                        type="number"
-                                                        className="h-8 w-24 bg-zinc-800 border-none rounded-lg text-xs font-bold text-white focus:ring-1 focus:ring-purple-500"
-                                                        placeholder="Valor..."
-                                                        value={rescueAmount}
-                                                        onChange={(e) => setRescueAmount(e.target.value)}
-                                                    />
-                                                    <Button size="sm" onClick={() => handleRescue(inv)} className="h-8 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black uppercase">Ok</Button>
-                                                    <Button size="sm" variant="ghost" onClick={() => setIsRescuing(null)} className="h-8 text-zinc-500 hover:text-white"><X size={14} /></Button>
+                                                <div className="flex flex-col items-end gap-2 mt-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            className="h-8 w-28 bg-zinc-800 border border-purple-500/30 rounded-lg text-xs font-bold text-white focus:ring-1 focus:ring-purple-500 px-2"
+                                                            placeholder="Valor do Resgate"
+                                                            value={rescueAmount}
+                                                            onChange={(e) => setRescueAmount(e.target.value)}
+                                                        />
+                                                        <Button size="sm" onClick={() => handleRescue(inv)} className="h-8 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-black uppercase px-3">Confirmar</Button>
+                                                        <Button size="sm" variant="ghost" onClick={() => setIsRescuing(null)} className="h-8 text-zinc-500 hover:text-white px-2"><X size={14} /></Button>
+                                                    </div>
+                                                    <p className="text-[10px] text-zinc-500 font-medium italic">Valor será creditado no Saldo Atual</p>
                                                 </div>
                                             )}
                                         </div>
